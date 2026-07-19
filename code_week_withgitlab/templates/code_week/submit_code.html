@@ -1,0 +1,527 @@
+{% extends 'base.html' %}
+{% comment %}用于学生提交代码{% endcomment %}
+{% block extrahead %}
+    {% load static %}
+    <script src="{% static 'assets/js/jquery.ztree.core.js' %}"></script>
+    <link href="{% static 'assets/css/zTreeStyle/zTreeStyle.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/demo.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'assets/css/codemirror/codemirror.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/codemirror/material.css' %}">
+    <script src="{% static 'assets/js/codemirror/lib/codemirror.js' %}"></script>
+    <script src="{% static 'assets/js/codemirror/addon/display/autorefresh.js' %}"></script>
+    <script src="{% static 'assets/js/codemirror/mode/clike.js' %}"></script>
+    <script src="{% static 'assets/js/codemirror/mode/python.js' %}"></script>
+    <script src="{% static 'assets/js/vue.js' %}"></script>
+    <style type="text/css">
+        /* div.content_wrap {width: 600px;height:380px;}
+        div.content_wrap div.left{float: left;width: 250px;}
+        div.content_wrap div.right{float: right;width: 340px;}
+    div.content_wrap div.left{float: left;width: 250px;}
+    div.zTreeDemoBackground {width:250px;height:362px;text-align:left;} */
+    div.content_wrap {
+	margin: 0;padding: 0;border: 0;outline: 0;font-weight: inherit;font-style: inherit;font-size: 100%;font-family: inherit;vertical-align: baseline;}
+    div.zTreeDemoBackground {
+	margin: 0;padding: 0;border: 0;outline: 0;font-weight: inherit;font-style: inherit;font-size: 100%;font-family: inherit;vertical-align: baseline;}
+    </style>
+{% endblock %}
+{% block content %}
+{% if members %}
+<button class="btn btn-danger" data-toggle="modal" data-target="#myModal">
+    请务必先确认组员代码提交情况
+</button>
+<br>
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" style='width:80%;'>
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                    &times;
+                </button>
+                <h4 class="modal-title" id="myModalLabel">
+                    组员Merge Request列表
+                </h4>
+            </div>
+            <div class="modal-body">
+                <form method="post" id="mergerequest-form" action={% url 'deal_merge_request' course.id %}>
+                    {% csrf_token %}
+                    {% if difflist %}
+
+                    <div class="modal-body">
+                            <p>提交代码的区别：</p>
+                            {% for diff in difflist %}
+                            {{diff | safe}}
+                            {% endfor %}
+                            <button type="submit" class="btn btn-default" onclick="mq(1);checkContribution();">同意</button>
+                            <button type="submit" class="btn btn-default" onclick="mq(0);checkContribution();">拒绝</button>
+                            <input type="text" id="mtext" name="mergerequest" hidden="true">
+                            <input type="text" id="merge_contribution" name="contribution" hidden="true">
+                            <p>注意：同意前先选择好贡献度分配条！</p>
+                    </div>
+                    {% else %}
+                    <div class="modal-body">
+                        <p>暂无Merge Requests!</p>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+{% endif %}
+
+
+<form method="post" id="submit-form" enctype="multipart/form-data" onsubmit="return checkContribution()">
+    {% csrf_token %}
+    {% if members %}
+    <br>
+    <p>您的小组包含以下成员，请拖动滑块更改各自的贡献度:</p>
+        {% for member in members %}
+            <lable class="member_name">{{ member.get_full_name }}</lable>
+            <br>
+        {% endfor %}
+    {% if members.count > 1 %}
+    <div id="stage" style="width:800px;height:80px;position:relative;"></div>
+    {% endif %}
+    {% endif %}
+    <p><span style="color:#FF0000;">特别注意</span>：只支持上传<span style="color:#FF0000">小于5MB</span>的<span style="color:#FF0000">ZIP格式</span>的压缩包，请将所有必要的代码和数据文件压缩成一个ZIP压缩包一并上传</p>
+    <input type="file" name="codeFile" accept=".zip">
+    <br>
+    <input type="text" id="ctext" name="contribution" hidden="true">
+    <button type="submit" id="submit_code" onclick='$("#submit_code").attr("disabled", "disabled");$("#submit-form").submit();'>提交代码</button></form>
+    {% if members %}
+    <hr>
+    <form method="post" id="submit-report-form" enctype="multipart/form-data" action={% url 'upload_report' course.id %}>
+    {% csrf_token %}
+        <p>请提交本小组的课程报告（完成了程序编写再提交）：</p>
+        <p>{% load static %}
+        模板一：<a href="{% static 'file/南京邮电大学程序设计报告样稿（通用个体报告2021.a版）.docx' %}">南京邮电大学程序设计报告样稿（通用个体报告2021.a版）.docx</a><br>
+        模板二：<a href="{% static 'file/南京邮电大学程序设计报告样稿（通用团体报告2021.a版）.docx' %}">南京邮电大学程序设计报告样稿（通用团体报告2021.a版）.docx</a><br></p>
+        <p><span style="color:#FF0000;">特别注意</span>：只支持上传<span style="color:#FF0000">DOC或者DOCX格式</span>的文档，请勿将实验报告另存成其他文件格式</p>
+        <input type="file" name="report" accept=".doc,.docx"><br>
+        <button type="submit" id="submit_doc" onclick='$("#submit_doc").attr("disabled", "disabled");$("#submit-report-form").submit();console.log(1);'>提交课程报告</button>
+    </form>
+    {% endif %}
+    <hr>
+    <div id="selects"></div><br>
+    <div class="content_wrap">
+	<div class="zTreeDemoBackground left">
+		<ul id="treeDemo" class="ztree"></ul>
+	</div>
+{#        <div class="container">#}
+        <textarea class="form-control" id="code-display" cols="50" rows="10"></textarea>
+{#            </div>#}
+<script>
+    if ( window.history.replaceState){
+        window.history.replaceState(null,null,window.location.href);
+    }
+</script>
+    <script type="text/javascript">
+        var editor;
+        var setting = {
+            data: {
+				simpleData: {
+					enable: true
+				}
+			},
+            callback: {
+                onClick: clickFile
+            }
+	    };
+        var zNodes = [];
+        var dirs = {};
+        var dirVue;
+        var reportVue;
+        var now = -1;
+        var globalCodeData ="";
+        $(document).ready(function(){
+            $.ajax({
+                type:"GET",
+                url:"{% url 'get_all_code_history' course.id %}",
+                dataType:"json",
+                success:function (data) {
+                    handleHistory(data);
+                },
+                error:function (jqXHR) {
+                    alert("error" + jqXHR.status);
+                }
+            });
+            $.ajax({
+                type:"GET",
+                url:"{% url 'get_all_report_history' course.id %}",
+                dataType:"json",
+                success:function (data) {
+                    handleReportHistory(data);
+                },
+                error:function (jqXHR) {
+                    alert("error" + jqXHR.status);
+                }
+            });
+			{#$.fn.zTree.init($("#treeDemo"), setting, zNodes);#}
+			var members = $('.member_name');
+            editor = CodeMirror.fromTextArea(document.getElementById("code-display"),{
+                lineNumbers:true,
+                mode:"text/x-c++src",
+                theme:'material',
+                readOnly: 'true',
+            });
+            editor.setSize(750, 370);
+		});
+        function handleHistory(data) // 用于处理获取到的所有目录信息
+        {
+            // 完成的任务有将最新的一次数据给zTree显示
+            // 设置下载最新代码的按钮
+            // 将以前版本的给vue用来显示
+
+            // 对数据按照id降序排序
+            data.sort(function(a, b) {
+                return b['id'] - a['id'];
+            });
+            if (data.length <= 0)
+            {
+                return;
+            }
+            else { // 添加历史代码选择
+                {% verbatim %}
+                var source = '<div id="historyCodeSelect">\n' +
+                    '        <p>选择以前版本代码</p>\n' +
+                    '        <select v-model="selected">\n' +
+                    '            <option v-for="option in options" v-bind:value="option.value">\n' +
+                    '                {{ option.text }}\n' +
+                    '            </option>\n' +
+                    '        </select>\n' +
+                    '        <button onclick="refreshTree()">刷新目录</button>\n' +
+                    '       <button onclick="downloadFile()">下载这个历史代码</button>\n' +
+                    '    </div>';
+                {% endverbatim %}
+                $('#selects').after(source);
+                dirVue = new Vue({
+                el: '#historyCodeSelect',
+                data: {
+                    selected: '',
+                    options: [
+                        ]
+                    }
+                });
+            }
+            var options = [];
+            for (var i = 0; i < data.length; ++i)
+            {
+                options.push({text: data[i]['time'], value: data[i]['id']});
+                dirs[data[i]['id']] = data[i]['text'];
+            }
+            dirVue.options = options;
+            dirVue.selected = data[0]['id'];
+            dataToNodes(JSON.parse(data[0]['text']));
+        }
+        function handleReportHistory(data) // 用于处理获取到的所有课程报告
+        {
+            // 完成的任务有将最新的一次数据给zTree显示
+            // 设置下载最新代码的按钮
+            // 将以前版本的给vue用来显示
+            // 对数据按照id降序排序
+            data.sort(function(a, b) {
+                return b['id'] - a['id'];
+            });
+            if (data.length <= 0)
+            {
+                return;
+            }
+            else { // 添加历史代码选择
+                {% verbatim %}
+                var source = '<div id="reportSelect">\n' +
+                    '        <p>选择以前提交的课程报告</p>\n' +
+                    '        <select v-model="selected">\n' +
+                    '            <option v-for="option in options" v-bind:value="option.value">\n' +
+                    '                {{ option.text }}\n' +
+                    '            </option>\n' +
+                    '        </select>\n' +
+                    '       <button onclick="downloadReport()">下载这个课程报告</button>\n' +
+                    '    </div>';
+                {% endverbatim %}
+                $('#selects').after(source);
+                reportVue = new Vue({
+                el: '#reportSelect',
+                data: {
+                    selected: '',
+                    options: [
+                        ]
+                    }
+                });
+            }
+            var options = [];
+            for (var i = 0; i < data.length; ++i)
+            {
+                options.push({text: data[i]['time'], value: data[i]['id']});
+            }
+            reportVue.options = options;
+            reportVue.selected = data[0]['id'];
+        }
+        function refreshTree() {
+            var nowId = dirVue.selected;
+            if (now == nowId) {
+                return;
+            }
+            else {
+                now = nowId;
+                dataToNodes(JSON.parse(dirs[nowId]));
+            }
+        }
+        function downloadFile() {
+            window.open("/code_week/get-code-zip-" + dirVue.selected.toString() + "/");
+        }
+        function downloadReport() {
+            window.open("/code_week/download-report-" + reportVue.selected.toString() + "/");
+        }
+        function clickFile(event, treeId, treeNode, clickFlag) {
+            if (isNaN(treeNode.id))
+            {
+                return;
+            }
+            $.ajax({
+                type:"GET",
+                url:"/code_week/get-code-" + treeNode.id.toString() +"/",
+                success:function (data) {
+                    {#globalCodeData = data;#}
+                    {#var script = document.createElement('script');#}
+                    {#script.src = 'data:text/javascript;charset=gbk,(function(){console.log(globalCodeData);alert(globalCodeData);var x = new Uint8Array(globalCodeData);editor.setValue(x);})()';#}
+                    {#document.body.appendChild(script);#}
+                    editor.setValue(data);
+                },
+                error:function (jqXHR) {
+                    alert("error" + jqXHR.status);
+                }
+            });
+        }
+        function checkContribution() {
+            var members = $('.member_name');
+            var contributionStr = "";
+            // var newContributionStr = "";
+            if (members.length == 0){
+                $('#ctext').val("TBD");
+                $('#merge_contribution').val("TBD");
+                return true;
+            }
+            if (members.length == 1){
+                $('#ctext').val(members[0].innerHTML+":100%");
+                $('#merge_contribution').val(members[0].innerHTML+":100%");
+                return true;
+            }
+            for (var i = 0; i < members.length; ++i) {
+                var val = parseInt(members[i].nextElementSibling.value);
+                if (i > 0)
+                    contributionStr += ',';
+                contributionStr += members[i].innerHTML;
+                contributionStr += ":";
+                contributionStr += document.getElementById(i+'ratio').innerHTML;
+            }
+            $('#ctext').val(contributionStr);
+            $('#merge_contribution').val(contributionStr);
+            // alert($('#merge_contribution').text())
+            // $('#nctext').val(newContributionStr);
+            return true;
+        }
+
+        function mq(val){
+            if (val==1)
+                $('#mtext').val("accpet");
+            else
+                $('#mtext').val("refuse");
+        }
+
+
+        function addNode2(rootId, i, dirdata, Nodes) {
+            for (var item in dirdata) {
+                if (typeof(dirdata[item]) == 'number') {
+                    Nodes.push({id:dirdata[item].toString(), pId:rootId, name:item});
+                }
+                else { // 目录
+                    if (Object.keys(dirdata[item]).length > 0) {
+                        Nodes.push({id: i++, pId: rootId, name: item, open: true});
+                        i = addNode2(i - 1, i, dirdata[item], Nodes);
+                    }
+                    else {
+                        Nodes.push({id: i++, pId: rootId, name: item, isParent: true});
+                    }
+                }
+            }
+            return i;
+        }
+        function dataToNodes2(dirdata) {
+            var i = 1;
+            zNodes.push({id:i, pId:0, name:'目录', open:true});
+            ++i;
+            addNode2(i-1, i, dirdata, zNodes);
+        }
+        function addNode(rootId, i, dirdata, Nodes) {
+            for (var item in dirdata) {
+                if (typeof(dirdata[item]) == 'number') {
+                    Nodes.push({id:dirdata[item], pId:'dir_'+rootId.toString(), name:item});
+                }
+                else { // 目录
+                    if (Object.keys(dirdata[item]).length > 0)
+                    {
+                        Nodes.push({id:'dir_'+(i++).toString(), pId:'dir_'+rootId.toString(), name:item, open:true});
+                        i = addNode(i-1, i, dirdata[item], Nodes);
+                    }
+                    else {
+                        Nodes.push({id:'dir_'+(i++).toString(), pId:'dir_'+rootId.toString(), name:item, isParent:true});
+                    }
+                }
+            }
+            return i;
+        }
+        function dataToNodes(dirdata) {
+            zNodes = [];
+            var i = 0;
+            zNodes.push({id:'dir_' + i.toString(), pId:0, name:'代码目录', open:true});
+            ++i;
+            addNode(0, i, dirdata, zNodes);
+            $.fn.zTree.init($("#treeDemo"), setting, zNodes);
+        }
+
+    </script>
+<script>
+	var Polygon=function(points,strokeStyle,fillStyle,isStroke,isFill){
+		this.points=points;
+		this.strokeStyle=strokeStyle;
+		this.fillStyle=fillStyle;
+		this.isFill=isFill;
+		
+		this.draw=function(id){
+			var canvas=document.createElement('canvas');
+			var context=canvas.getContext('2d');
+			var maxX=0,maxY=0;
+			for(var i=0;i<this.points.length;i++){
+				if(this.points[i][0]>maxX)
+					maxX=this.points[i][0];
+				if(this.points[i][1]>maxY)
+					maxY=this.points[i][1];
+			}
+			canvas.height=maxY;
+			canvas.width=maxX;
+			context.beginPath();
+			context.strokeStyle=this.strokeStyle;
+			context.fillStyle=this.fillStyle;
+			context.moveTo(this.points[0][0],this.points[0][1]);
+			for(var i=1;i<this.points.length;i++)
+				context.lineTo(this.points[i][0],this.points[i][1]);
+			context.closePath();
+			if(isFill)
+				context.fill();
+			if(isStroke)
+				context.stroke();
+			canvas.style.position="absolute";
+			canvas.id=id;
+			document.getElementById('stage').appendChild(canvas);
+			return canvas;
+		}
+	}
+	function Slide(height,width,blockCount,descriptions,cursorUnit){			
+		this.height=height;
+		this.width=width;
+		this.cursorUnit=cursorUnit;
+		this.cursor=[[cursorUnit,0],[2*cursorUnit,cursorUnit],[2*cursorUnit,3*cursorUnit],[0,3*cursorUnit],[0,cursorUnit],[cursorUnit,0]];
+		this.colors=['#0072E3','#00BFFF','#0072E3','#00E3E3','#F9F900','#8600FF','#0000C6','#00BFFF','#FF8000','#000079','#009100','#3A006F','#FF2D2D','#7B7B7B','#642100','#484891','#336666','#FFFF37','#600030','#003E3E','#C4E1FF'];
+		var tmp;
+		tmp=new Polygon([[0,0],[width,0],[width,10],[0,height],[0,0]],'blue',undefined,true,false);
+		this.axis=tmp.draw('axis');
+		this.points=[];
+		for(var i=0,d=width/blockCount;i<blockCount;i++){
+			tmp=new Polygon(this.cursor,undefined,this.colors[i],false,true);
+			this.points[i]=tmp.draw(i);
+			this.points[i].style.top=this.height+'px';
+			this.points[i].style.left=d*(i+1)-this.cursorUnit+'px';
+			var description=document.createElement('div');
+			var ratio=document.createElement('p');
+			var content=document.createElement('p');	
+			description.id=i+'description';
+			ratio.id=i+'ratio';
+            ratio.style="margin-left: 20px;";
+			content.id=i+'content';
+			description.style.position="absolute";
+			description.style.width=this.width;
+			description.style.left=this.points[i].style.left;
+			description.style.top=this.height+this.cursorUnit+'px';
+			description.style.color=this.colors[i-1];
+			description.style.visibility='hidden';
+			document.getElementById('stage').appendChild(description);
+			description.appendChild(ratio);
+			description.appendChild(content);
+			if(i==0)
+				ratio.innerHTML=Math.round((parseInt(this.points[i].style.left)+this.cursorUnit)/parseInt(this.width)*10000)/100+'%';
+			else
+				ratio.innerHTML=Math.round((parseInt(this.points[i].style.left)-parseInt(this.points[i-1].style.left))/parseInt(this.width)*10000)/100+'%';
+			content.innerHTML=descriptions[i];
+		}
+		this.axisContext=this.axis.getContext('2d');
+		for(var i=0,d=width/blockCount;i<blockCount;i++){
+			this.axisContext.fillStyle=this.colors[i];
+			this.axisContext.fillRect(d*i,0,d,this.height);
+		}
+		this.addListener=function(){
+			var drager=undefined;
+			var pre=undefined;
+			var left=undefined;
+			var right=undefined;
+			var id=undefined;
+			var temp=this;
+			for(var i=0;i<temp.points.length;i++){
+				temp.points[i].onmousedown=function(e){
+					if(i!=temp.points.length-1)
+						drager=this;
+					pre=e.clientX;
+					id=parseInt(this.id);
+					left=(id==0?temp.cursorUnit:parseInt(temp.points[id-1].style.left)+2*temp.cursorUnit);
+					right=(id==temp.points.length-1?parseInt(temp.width)-3*temp.cursorUnit:parseInt(temp.points[id+1].style.left)-2*temp.cursorUnit);
+					document.getElementById(id+'description').style.visibility='visible';
+				}	
+			}
+			
+			document.onmouseup=function(e){
+				if(drager!=undefined){
+					document.getElementById(id+'description').style.visibility='hidden';
+					drager=undefined;
+					pre=undefined;
+					id=undefined;
+				}
+			}
+			
+			document.onmousemove=function(e){
+				if(drager!=undefined){
+					var tmp=parseInt(drager.style.left)+e.clientX-pre;
+					if(tmp>=left&&tmp<=right){
+						drager.style.left=tmp+'px';
+						var description=document.getElementById(id+'description');
+						description.style.left=tmp+'px';
+                        
+						document.getElementById(id+'ratio').innerHTML=Math.round((tmp-left+2*temp.cursorUnit)/temp.width*10000)/100+'%';
+						document.getElementById(id+1+'ratio').innerHTML=Math.round((right-tmp+2*temp.cursorUnit)/temp.width*10000)/100+'%';
+						temp.axisContext.fillStyle=temp.colors[id];
+						temp.axisContext.fillRect(left,0,tmp-left+temp.cursorUnit,temp.height);
+						temp.axisContext.fillStyle=temp.colors[id+1];
+						temp.axisContext.fillRect(tmp+temp.cursorUnit,0,right-tmp,temp.height);
+					}
+					pre=e.clientX;
+				}
+			}
+		}
+	}
+	
+</script>
+{% if members.count == 3 %}
+<script>
+    new Slide(15,600,3,['{{members.0.get_full_name}}','{{members.1.get_full_name}}','{{members.2.get_full_name}}'],8).addListener();
+</script>
+{% endif %}
+{% if members.count == 2 %}
+<script>
+    new Slide(15,600,2,['{{members.0.get_full_name}}','{{members.1.get_full_name}}'],8).addListener();
+</script>
+{% endif %}
+
+
+{% endblock %}

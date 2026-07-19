@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .points-summary { margin-bottom: 30px; }
+    .points-card { text-align: center; padding: 30px; margin-bottom: 20px; border-radius: 6px; }
+    .points-card.total { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+    .points-card.answered { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: #fff; }
+    .points-card h1 { font-size: 48px; margin: 10px 0; }
+    .kp2-table td { vertical-align: middle; }
+</style>
+
+<div class="row points-summary">
+    <div class="col-md-6">
+        <div class="points-card total">
+            <h5>总积分</h5>
+            <h1>{{ total_points }}</h1>
+            <p>分</p>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="points-card answered">
+            <h5>总答题数</h5>
+            <h1>{{ total_answered }}</h1>
+            <p>题</p>
+        </div>
+    </div>
+</div>
+
+{% if kp2_data %}
+<div class="panel panel-default">
+    <div class="panel-heading"><strong>各知识点积分明细</strong></div>
+    <table class="table table-striped kp2-table">
+        <thead>
+            <tr><th>一级知识点</th><th>二级知识点</th><th>正确</th><th>已答</th><th>正确率</th></tr>
+        </thead>
+        <tbody>
+            {% for item in kp2_data %}
+            <tr>
+                <td>{{ item.kp1_name }}</td>
+                <td>{{ item.name }}</td>
+                <td><span class="badge alert-success">{{ item.correct }}</span></td>
+                <td>{{ item.total }}</td>
+                <td>
+                    {% if item.total > 0 %}
+                        {% widthratio item.correct item.total 100 %}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">还没有答题记录，去<a href="{% url 'quiz_kp_tree' %}">选择知识点</a>开始练习吧！</div>
+{% endif %}
+{% endblock %}

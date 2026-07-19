@@ -1,0 +1,358 @@
+{% extends 'base.html' %} {% block title %} 签到管理 {% endblock %} {% block extrahead %} {% load static %}
+<style>
+    .data_input {
+        height: 34px;
+        border: 1px solid #e1e1e1;
+        border-radius: 5px;
+    }
+</style>
+
+<link href="{% static 'assets/css/bootstrap-datetimepicker.min.css' %}" rel="stylesheet">
+<script src="{% static 'assets/js/bootstrap-datetimepicker.min.js' %}"></script>
+<script src="{% static 'assets/js/moment/moment.min.js' %}"></script>
+<script src="{% static 'assets/js/moment/zh-cn.js' %}"></script>
+<script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=mZ35yskEcncx4Xx5CLIXXBFypb6QhkHv"></script>
+<link href="{% static 'assets/css/toastr.min.css' %}" rel="stylesheet">
+<script src="{% static 'assets/js/toastr.min.js' %}"></script>
+{% endblock %} 
+<!--mZ35yskEcncx4Xx5CLIXXBFypb6QhkHv-->
+<!--NW1qGiEHfWeZLoVMg6ZtxeC9dyswLbGR-->
+{% block content %}
+<ol class="breadcrumb">
+    <li>
+        <a href="{% url 'index' %}">主页</a>
+    </li>
+    <li class="active">签到管理</li>
+    <li class="active">布置签到</li>
+</ol>
+
+<!--<h1>签到布置</h1>-->
+
+<!-- Button trigger modal -->
+<!--<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal">-->
+    <!--布置签到-->
+<!--</button>-->
+
+<!-- Modal -->
+<!--<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">-->    
+    <!--<div class="modal-dialog" role="document">-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <!--<button type="button" class="close" data-dismiss="modal" aria-label="Close">-->
+                    <!--<span aria-hidden="true">&times;</span>-->
+                <!--</button>-->
+                <h4 class="modal-title">布置签到</h4>
+
+            </div>
+
+            <div class="modal-body">
+                <form class="row" method="post" action="{% url 'sign.create' %}">
+                    <div class="form-group col-sm-10">
+                        <select id="class-list" class="form-control" name="banjiId">
+                            {% for i in classes %}
+                            <option value="{{ i.banjiId }}">{{ i.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class='col-sm-5'>
+                        <div class="form-group">
+                            <label for="start_time">开始时间</label>
+                            <div class='input-group date' id='datetimepicker1'>
+                                <input type='text' class="form-control" name="start_time" id="startedTime" />
+                                <span class="input-group-addon">
+                                    <span class="glyphicon glyphicon-calendar"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class='col-sm-5'>
+                        <div class="form-group">
+                            <label for="end_time">结束时间</label>
+                            <div class='input-group date' id='datetimepicker2'>
+                                <input type='text' class="form-control" name="end_time" id="closedTime" />
+                                <span class="input-group-addon">
+                                    <span class="glyphicon glyphicon-calendar"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                   <!--<div class='col-sm-4'>-->
+                        <!--<div class="form-group">-->
+                            <!--<label for="end_time">开始周</label>-->
+                            <!--<div>-->
+                                <!--<input type='text' class="form-control" name="startWeek" value="0" id="startWeek"/>-->
+                            <!--</div>-->
+                        <!--</div>-->
+                    <!--</div>-->
+
+                    <div class='col-sm-5'>
+                        <div class="form-group">
+                            <label for="end_time">持续时间(周)</label>
+                            <div>
+                                <input type='text' class="form-control" name="endWeek" value="1" id="endWeek"/>
+                            </div>
+                        </div>
+                    </div>                   
+                    
+                    <!--<div class='col-sm-4'>-->
+                        <!--<div class="form-group">-->
+                            <!--<label for="end_time">间隔(周)</label>-->
+                            <!--<div>-->
+                                <!--<input type='text' class="form-control" name="interval" value="1" id="interval"/>-->
+                            <!--</div>-->
+                        <!--</div>-->
+                    <!--</div>-->
+
+                    <div class="form-group col-sm-5">
+                        <label for="end_time">签到频率</label>
+                            <select id="interval" class="form-control" name="interval">
+                                
+                                <option  value="1">每周签到一次</option>
+                                <option  value="2">每隔一周签到一次</option>
+                                <option  value="3">每隔两周签到一次</option>
+                            </select>
+                    </div>
+                    <div class="col-sm-10">
+                        <div class="form-group">
+                            <label for="sign_pos">设置签到位置</label>
+                            <div>
+                                <input type='text' class="form-control" name="sign_pos" placeholder="输入签到位置后按回车或者在下方地图中直接点击" id="sign_pos" onkeydown="if(event.keyCode==13){local.search($('#sign_pos').val());}"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="width:95%; margin: auto; height:300px; font-size:12px" id="allmap"></div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <!--<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>-->
+                <button id="sub-btn" type="button" class="btn btn-primary">布置</button>
+            </div>
+        </div>
+    <!--</div>-->
+<!--</div>-->
+<h2>已经布置的签到</h2>
+<div class="table-responsive">
+    <table class="table">
+        <tr>
+            <th>课程名称</th>
+            <th>签到人数</th>
+            <th>全部人数</th>
+            <th>开始时间</th>
+            <th>结束时间</th>
+            <th>操作</th>
+        </tr>
+
+        {% for i in data %}
+        <tr>
+            <th>{{ i.banji__name }}</th>
+            <th>{{ i.has_signed_count }}</th>
+            <th>{{ i.all_student_count }}</th>
+            <th>{{ i.started_time }}</th>
+            <th>{{ i.closed_time }}</th>
+            <th>
+                <a href="{% url 'sign.detail' i.id %}">详细</a>
+                <a class="del-btn" href="{% url 'sign.delete' i.id %}">删除</a>
+                <a class="edit-btn" href="javascript:showEdit({{i.id}});">修改</a>
+                {% if i.has_leave %}<a href="{% url 'sign.detail' i.id %}?usergroup=4">批假</a>{% endif %}
+            </th>
+        </tr>
+        {% endfor %}
+
+    </table>
+</div>
+<!--修改签到时间-->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" onclick="stop();"><span
+                        aria-hidden="true">&times;</span><span class="sr-only">关闭</span></button>
+                <h4 class="modal-title" id="editModalLabel">修改签到时间</h4>
+            </div>
+            <div class="modal-body">
+<form class="form-horizontal">
+<div class="panel panel-default">
+  <div class="panel-body">
+    <div class="form-group">
+      <input type="hidden" name="edit_id" id="edit_id">
+      <label class="col-sm-4 control-label">签到开始时间：</label>
+      <div class='col-sm-6 input-group date' id='datetimepicker3'>
+        <input type='text' class="form-control" name="edit_starttime" id="edit_starttime" />
+        <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-4 control-label">签到结束时间</label>
+      <div class='col-sm-6 input-group date' id='datetimepicker4'>
+         <input type='text' class="form-control" name="edit_endtime" id="edit_endtime" />
+         <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+      </div>
+    </div>
+  </div>
+</div></form>
+            </div>
+            <div class="modal-footer">
+                <a id="close" name="close" type="button" class="btn btn-default"
+                   href="javascript:saveEdit();">保存修改</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+function saveEdit(){
+  var val = $("#edit_id").val();
+  if(val!="0"){
+    $.ajax({
+      type:'POST',
+      dataType:'json',
+      data:{id:$('#edit_id').val(),starttime:$('#edit_starttime').val(),endtime:$('#edit_endtime').val()},
+      url:"{% url 'save_event_config' %}",
+      success:function(response){
+        var result = eval('(' + JSON.stringify(response) + ')');
+        if(result['result']=='ok'){
+          $('#editModal').modal('hide');
+          toastr.success('已成功保存签到信息');
+        }
+      }
+    });
+  }
+}
+
+function showEdit(val){
+  if(val!="0"){
+    $.ajax({
+      type:'GET',
+      dataType:'json',
+      data:{id:val},
+      url:"{% url 'get_event_config' %}",
+      success:function(response){
+        var eventInfo = eval('(' + JSON.stringify(response) + ')');
+        $('#edit_id').val(eventInfo['id']);
+        $('#edit_starttime').val(eventInfo['starttime']);
+        $('#edit_endtime').val(eventInfo['endtime']);
+        $('#editModal').modal('show');
+      }
+    });
+  }
+}    
+
+    $("#sign_teacher_manage").addClass("active");
+    $("#sign_user_manage").css("display", 'block');
+    $("#sign_manage").addClass("active");
+
+    var position;
+    var map = new BMap.Map("allmap");
+    var point = new BMap.Point(118.936548, 32.114245);
+    map.centerAndZoom(point, 17);
+    map.addControl(new BMap.NavigationControl());
+
+    let local = new BMap.LocalSearch(map, {
+      onSearchComplete: (res) => {
+        if (local.getResults() != undefined && local.getResults().getPoi(0) != undefined) {
+          pos = local.getResults().getPoi(0);
+          console.log(pos);
+          position = JSON.stringify([pos.point.lng, pos.point.lat])
+          map.clearOverlays(); //清除标注
+          map.centerAndZoom(pos.point, 17);
+          map.addOverlay(new BMap.Marker(pos.point, {title: pos.title}))
+        } else {
+          toastr.warning("未找到搜索结果");
+        }
+      },
+    });
+
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r){
+        if(this.getStatus() == BMAP_STATUS_SUCCESS){
+            point = r.point;
+        }
+        else {
+            //toastr.warning('定位失败：'+this.getStatus());
+            point = new BMap.Point(118.93732879358151, 32.11954772296558)
+        }
+        position = JSON.stringify([point.lng, point.lat]);
+        console.log('Your Position:' + point.lng + ',' + point.lat);
+        map.centerAndZoom(point, 17);
+        map.addOverlay(new BMap.Marker(point));
+    });
+
+    map.addEventListener("click", function (e) {
+        map.clearOverlays()
+        position = JSON.stringify([e.point.lng, e.point.lat])
+        point = new BMap.Point(e.point.lng, e.point.lat)
+        console.log(position);
+        var marker = new BMap.Marker(point);
+        map.addOverlay(marker);
+    });
+
+    $(function () {
+        $('#datetimepicker1').datetimepicker({
+            format: 'yyyy-mm-dd hh:ii',
+            viewSelect: 'hour',
+            autoclose: true,
+            todayBtn: true,
+            minuteStep: 5,
+        });
+        $('#datetimepicker2').datetimepicker({
+            format: 'yyyy-mm-dd hh:ii',
+            viewSelect: 'hour',
+            autoclose: true,
+            todayBtn: true,
+            minuteStep: 5,
+        });
+        $('#datetimepicker3').datetimepicker({
+            format: 'yyyy-mm-dd hh:ii',
+            viewSelect: 'hour',
+            autoclose: true,
+            todayBtn: true,
+            minuteStep: 5,
+        });
+        $('#datetimepicker4').datetimepicker({
+            format: 'yyyy-mm-dd hh:ii',
+            viewSelect: 'hour',
+            autoclose: true,
+            todayBtn: true,
+            minuteStep: 5,
+        });
+    });
+    $('#startedTime').val(moment().format('YYYY-MM-DD HH:mm'));
+    $('#closedTime').val(moment().add(100, 'minutes').format('YYYY-MM-DD HH:mm'));
+
+    $('#sub-btn').on('click', function () {
+        $.post('/sign/create', {
+            position: position,
+            startedTime: $('#startedTime').val(),
+            closedTime: $('#closedTime').val(),
+            banjiId: $('#class-list option:selected').val(),
+            startWeek: $('#startWeek').val(),
+            endWeek: $('#endWeek').val(),
+            interval: $('#interval').val()
+        }, function (result, statue) {
+            if (statue === 'success') {
+                if (result.success) {
+                    toastr.success('布置成功');
+                    //location.reload();
+                } else {
+                    toastr.error(result.errMsg);
+                }
+            } else
+                toastr.error('服务器抽风了QAQ，程序员小哥哥维修中');
+        })
+    });
+    
+
+    $('.del-btn').on('click', function (e) {
+        e.preventDefault()
+        if (window.confirm('确认删除？')) {
+            $.post($(this).attr('href'), {}, function () {
+                //location.reload()
+            })
+        }
+    })
+</script>
+{% endblock %}
+

@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .kp-panel { margin-bottom: 15px; }
+    .kp-panel .panel-heading { cursor: pointer; }
+    .progress { margin-bottom: 0; height: 20px; }
+    .badge.pull-right { margin-left: 10px; }
+    .kp2-item { padding: 8px 15px; border-bottom: 1px solid #eee; }
+    .kp2-item:last-child { border-bottom: none; }
+    .kp2-item:hover { background: #f5f5f5; }
+    .kp2-item.complete { background: #f0fff0; }
+    .kp2-link { font-size: 14px; }
+    .kp2-link .fa { margin-right: 5px; }
+    .course-section { margin-bottom: 30px; }
+</style>
+
+{% if course_data %}
+    {% for course in course_data %}
+    <div class="course-section">
+        <h4><i class="fa fa-book"></i> {{ course.name }}</h4>
+        {% for kp1 in course.kp1s %}
+        <div class="panel panel-default kp-panel">
+            <div class="panel-heading" data-toggle="collapse" data-target="#kp1-{{ kp1.id }}" style="background: #f8f9fa;">
+                <strong>{{ kp1.name }}</strong>
+                <i class="fa fa-chevron-down pull-right"></i>
+            </div>
+            <div id="kp1-{{ kp1.id }}" class="panel-collapse collapse">
+                <div class="panel-body" style="padding: 0;">
+                    {% for kp2 in kp1.kp2s %}
+                    <div class="kp2-item {% if kp2.complete %}complete{% endif %}">
+                        <a href="{% url 'quiz_answer' kp2.id %}" class="kp2-link">
+                            {% if kp2.complete %}
+                                <i class="fa fa-check-circle" style="color: #5cb85c;"></i>
+                            {% else %}
+                                <i class="fa fa-chevron-circle-right" style="color: #337ab7;"></i>
+                            {% endif %}
+                            {{ kp2.name }}
+                        </a>
+                        <div class="pull-right" style="width: 260px;">
+                            <small class="text-muted">{{ kp2.answered }}/{{ kp2.total }}</small>
+                            <span class="badge{% if kp2.correct > 0 %} alert-success{% endif %}">{{ kp2.correct }}分</span>
+                            {% if kp2.total > 0 %}
+                            <div class="progress">
+                                <div class="progress-bar{% if kp2.complete %} progress-bar-success{% else %} progress-bar-info{% endif %}"
+                                     style="width: {% widthratio kp2.answered kp2.total 100 %}%;">
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info">暂无课程数据，请先由管理员添加课程和知识点。</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+    <style type="text/css">
+    <!--
+    table td{word-break: keep-all;}
+    -->
+    </style>
+    <ol class="breadcrumb">
+        <li><a href="{% url 'index' %}">主页</a></li>
+        <li class="active">我的数据</li>
+    </ol>
+    {% for record in data %}
+        <h3>{{record.banji}}</h3>
+        <h4>作业总分：{{record.pscore}}</h4>
+        <h4>慕课总分：{{record.mscore}}</h4>
+        <h4>签到情况：{{record.sign}}</h4>
+        <h4>综合得分：{{record.fscore}}</h4>
+        <h4>当前排名：{{record.rank}}</h4>
+    {% endfor %}
+    <script>
+    </script>
+{% endblock %}

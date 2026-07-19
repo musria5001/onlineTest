@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h2>修改用户“{{ myuser.username }}({{ myuser.id_num }})”的信息</h2>
+    <form method="post">
+    <label for="groups">选择用户组</label>
+        {% csrf_token %}
+        <select class="form-control" id="groups" name="group_id">
+            {% for group in groups %}
+                <option value="{{ group.pk }}">{{ group.name }}</option>
+            {% endfor %}
+        </select>
+        <div class="form-group">
+            <label for="school" class="control-label">所属单位</label>
+            <input type="text" class="form-control" name="school" id="school" placeholder="请输入学校名称" value="{% if myuser.school %}{{ myuser.school }}{% endif %}">
+            <label for="shortschool" class="control-label">学校简称</label>
+            <input type="text" class="form-control" name="school_short" id="school_short" placeholder="请输入学校简称" value="{% if myuser.school_short %}{{ myuser.school_short }}{% endif %}">
+            <label for="realname" class="control-label">真实姓名</label>
+            <input type="text" class="form-control" name="realname" id="realname" placeholder="请输入真实姓名" value="{{ myuser.username }}">
+            <label for="password" class="control-label">密码</label>
+            <input type="text" class="form-control" name="password" id="password" placeholder="请输入密码">
+            <label for="allow_num" class="control-label">批量添加账号数量</label>
+            <input type="text" class="form-control" name="allow_num" id="allow_num" placeholder="当前允许创建的总量:{{ myuser.allow_num }}, 剩余:{{ myuser.create_num }}, 此处请填写总量的数值">    
+        </div>
+        <button type="submit">保存</button>
+    </form>
+    <script>
+        $(function () {
+            $("#groups option[value='{{ current_group_id }}']").prop("selected", true);
+        });
+    </script>
+{% endblock %}

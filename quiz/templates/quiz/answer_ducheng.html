@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .question-box { margin-top: 20px; }
+    .question-title { font-size: 18px; margin-bottom: 25px; padding: 15px; background: #f9f9f9; border-left: 4px solid #f0ad4e; }
+    .answer-input { font-size: 20px; padding: 10px 15px; width: 100%; max-width: 400px; }
+    .result-box { display: none; margin-top: 20px; padding: 15px; border-radius: 4px; }
+    .result-box.correct { background: #dff0d8; border: 1px solid #d6e9c6; }
+    .result-box.wrong { background: #f2dede; border: 1px solid #ebccd1; }
+    .progress-box { margin-bottom: 20px; }
+</style>
+
+<div class="question-box">
+    <div class="progress-box">
+        <p class="text-muted">
+            已答 <strong>{{ progress.answered }}</strong> / {{ progress.total }} 题，
+            正确 <strong style="color:#5cb85c;">{{ progress.correct }}</strong> 题
+        </p>
+        {% if progress.total > 0 %}
+        <div class="progress"><div class="progress-bar progress-bar-success" style="width: {% widthratio progress.correct progress.total 100 %}%;"></div></div>
+        {% endif %}
+    </div>
+
+    <div class="question-title">
+        <span class="label label-warning">填空题</span>
+        <strong> 题目 {{ progress.answered|add:"1" }}</strong>
+        <p style="margin-top:10px; font-size:16px;">{{ question.title }}</p>
+    </div>
+
+    <div>
+        <input type="text" class="answer-input" id="answer-input" placeholder="输入你的答案..." autofocus>
+        <button class="btn btn-warning btn-lg" onclick="submitDucheng()" style="vertical-align:top;">
+            提交
+        </button>
+    </div>
+
+    <div id="result-box" class="result-box"></div>
+
+    <div id="next-btn" style="display:none; margin-top:20px;">
+        <a href="?{% if assignment_id %}assignment={{ assignment_id }}{% endif %}" class="btn btn-primary btn-lg">下一题 <i class="fa fa-arrow-right"></i></a>
+    </div>
+</div>
+
+<script>
+var answered = false;
+
+$('#answer-input').keypress(function(e) { if (e.which === 13) submitDucheng(); });
+
+function submitDucheng() {
+    if (answered) return;
+    var val = $('#answer-input').val().trim();
+    if (!val) { alert('请输入答案'); return; }
+    answered = true;
+
+    $.ajax({
+        type: 'POST',
+        url: '{% url "quiz_submit" kp2.id %}',
+        data: {
+            question_type: 'ducheng',
+            question_id: {{ question.ducheng_id }},
+            selected: val,
+            assignment_id: '{{ assignment_id|default:"" }}'
+        },
+        dataType: 'json',
+        success: function(res) {
+            var rb = $('#result-box');
+            if (res.correct) {
+                rb.addClass('correct').html('<h4><i class="fa fa-check-circle"></i> 回答正确！+1分</h4>');
+            } else {
+                rb.addClass('wrong').html('<h4><i class="fa fa-times-circle"></i> 回答错误</h4><p>你的答案: <b>'+val+'</b></p><p>正确答案: <b>'+res.right_answer+'</b></p>');
+            }
+            rb.show();
+            $('#next-btn').show();
+        },
+        error: function() { answered = false; alert('提交失败'); }
+    });
+}
+</script>
+{% endblock %}

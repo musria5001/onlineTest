@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load filters %}
+{% block extrahead %}
+    {% load static %}
+    <link href="{% static 'assets/css/toastr.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/bootstrap-table-1.15.5.min.css' %}" rel="stylesheet">
+    <script src="{% static 'assets/js/bootstrap-table-1.15.5.min.js' %}"></script>
+    <script src="{% static 'assets/js/bootstrap-table-export.min.js' %}"></script>
+    <script src="{% static 'assets/js/tableExport.js' %}"></script>
+    <script src="{% static 'assets/js/toastr.min.js' %}"></script>
+    {% endblock %}
+{% block content %}
+<ol class="breadcrumb">
+    <li><a href="{% url 'index' %}">主页</a></li>
+    <li class="active"><a href="{% url 'banji_list' %}">班级管理</a></li>
+    <li class="active">慕课成绩分析</li>
+</ol>
+
+<div class="uoload">
+        <div class="input-group">
+          <form method="POST" action="{% url 'once' %}?classname={{class_id}}" enctype="multipart/form-data" name="upload">
+            {% csrf_token %}
+            <div class="form-group">
+            <h4 for="exampleFormControlFile1">上传慕课堂成绩数据</h4>
+            <div style="margin-bottom: 10px;"><input class="form-control-file" type="file" name="names" accept=".xls"/></div>
+            
+            <button type="submit" class="btn btn-default form-control-file">上传</button>
+            </div>
+            {% if msg %}
+            <script>toastr.error("{{msg}}"); </script>
+            {% endif %}
+            {% if msg_s %}
+            <script>toastr.success("{{msg_s}}"); </script>
+            {% endif %}
+          </form>
+      </div>
+</div>
+
+<table    id="table"
+          data-show-columns="true"
+          data-show-toggle="true"
+          data-pagination="false"
+          data-url="{% url 'get_score_list' %}?classname={{class_id}}"
+          data-show-export="true"
+          data-query-params="queryParams"
+          data-toolbar="#toolbar"
+          data-sort-name="pk"
+          data-striped="true"
+>
+    <thead>
+    <tr>
+        <th data-field="pk" data-sortable="true" data-valign="middle">学号</th>
+        <th data-field="name" data-sortable="true" data-valign="middle">姓名</th>
+        {% for i in nums|get_range %}
+        <th data-field="score{{i}}" data-valign="middle">慕课成绩</th>
+        {% endfor %}
+        <!--<th data-field="general" data-sortable="true" data-valign="middle">预测成绩</th>-->
+        
+    </tr>
+    </thead>
+</table>
+
+<hr>
+
+<div class="uoload">
+        <div class="input-group">
+          <form method="POST" action="{% url 'once' %}?classname={{class_id}}" enctype="multipart/form-data" name="upload">
+            {% csrf_token %}
+            <div class="form-group">
+            <h4 for="exampleFormControlFile1">自动筛查校内学生平时成绩</h4>
+            <div style="margin-bottom: 10px;">中国大学MOOC慕课堂成绩数据文件<input class="form-control-file" type="file" name="sourceExcel" accept=".xls,.xlsx"/></div>
+            <div style="margin-bottom: 10px;">正方教务系统学生数据文件<input class="form-control-file" type="file" name="targetExcel" accept=".xls,.xlsx"/></div>
+            <button id="btn" type="submit" class="btn btn-default form-control-file" onclick="wait()">上传所需文件</button>
+            </div>
+            {% if msg1 %}
+            <script>toastr.error("{{msg1}}"); </script>
+            {% endif %}
+            {% if msg1_s %}
+            <script>toastr.success("{{msg1_s}}"); </script>
+            {% endif %}
+          </form>
+          {% if downloadDir %}
+          <form method="POST" action="{% url 'download_result' %}" name="download" target="_blank">
+              {% csrf_token %}
+              <div class="form-group">
+                  <input type="hidden" name="downloadDir" value={{downloadDir}} />
+                  <input type="hidden" name="filename" value={{filename}} />
+                  <button id="download" type="submit" class="btn btn-default">下载筛查结果</button>
+              </div>
+          </form>
+          {% endif %}
+      </div>
+</div>
+
+<script>
+    function queryParams(params) {
+        $('#toolbar').find('select[name]').each(function () {
+            params[$(this).attr('name')] = $(this).val();
+        });
+        return params;
+    }
+  $(function() {
+    $('#table').bootstrapTable();
+  })
+    function wait(){
+        document.getElementById("btn").innerHTML = "请稍候" ;
+    }
+</script>
+{% endblock %}

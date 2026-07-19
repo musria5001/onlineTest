@@ -1,0 +1,460 @@
+{% extends 'base.html' %}
+{% block extrahead %}
+    {% load static %}
+    <link href="{% static 'assets/css/bootstrap-table.min.css' %}" rel="stylesheet">
+    <script src="{% static 'assets/js/bootstrap-table.min.js' %}"></script>
+    <script src="{% static 'assets/js/bootstrap-table-zh-CN.min.js' %}"></script>
+    <script src="{% static 'assets/js/bootstrap-table-export.min.js' %}"></script>
+    <script src="{% static 'assets/js/tableExport.js' %}"></script>
+    <link href="{% static 'assets/css/toastr.min.css' %}" rel="stylesheet">
+    <script src="{% static 'assets/js/toastr.min.js' %}"></script>
+{% endblock %}
+{% block content %}
+    <style type="text/css">
+    <!--
+    table td{word-break: keep-all;}
+    -->
+    </style>
+    <!--下载进度条-->
+    <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" id="myModal" style="display:none;margin-top:200px" data-backdrop="static">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: white">
+                    <button id="closeModal" type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h3 class="modal-title" id="myModalLabel" style="text-align: center;color:black">本操作需要的时间较多，请您请耐心等待... </h3>
+                </div>
+                <div class="progress" style="margin: 20px" id="loading-out">
+                    <div class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width:0" id="loading">
+                        <span class="sr-only">40% Complete (success)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--进度条结束-->
+
+    <!--签到详情-->
+    <div class="modal fade" id="signModal" tabindex="-1" role="dialog" aria-labelledby="signModalLabel" aria-hidden="true">
+        <div class="modal-dialog  modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" onclick="stop();"><span
+                            aria-hidden="true">&times;</span><span class="sr-only">关闭</span></button>
+                    <h4 class="modal-title" id="signModalLabel">签到数据</h4>
+                </div>
+                <div class="modal-body">
+                    <table id="signTable"
+                        data-side-pagination="server"
+                        data-toggle="table"
+                        data-url="{% url 'get_sign_dtl' %}"
+                        data-pagination="false"
+                        data-classes="table table-hover table-condensed"
+                        data-striped="true"
+                        data-query-params="signQueryParams"
+                        data-show-export="false"
+                        data-sort-name="begin"
+                        data-sort-order="desc"
+                    >
+                        <thead>
+                        <tr>
+                            <th data-field="name">班级名称</th>
+                            <th data-field="begin">开始时间</th>
+                            <th data-field="end">结束时间</th>
+                            <th data-field="status">签到数据</th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--设置成绩比例-->
+    <div class="modal fade" id="scoreModal" tabindex="-1" role="dialog" aria-labelledby="scoreModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" onclick="stop();"><span
+                            aria-hidden="true">&times;</span><span class="sr-only">关闭</span></button>
+                    <h4 class="modal-title" id="scoreModalLabel">设置成绩占比</h4>
+                </div>
+                <div class="modal-body">
+<form class="form-horizontal">
+<div class="panel panel-default">
+  <div class="panel-body">
+    <div class="form-group">
+      <label class="col-sm-4 control-label">签到成绩占比：</label>
+      <div class="col-sm-6">
+        <input type="text" class="form-control" id="score1" value="">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-4 control-label">慕课作业成绩占比：</label>
+      <div class="col-sm-6">
+        <input type="text" class="form-control" id="score2" value="">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-4 control-label">平台作业成绩占比：</label>
+      <div class="col-sm-6">
+        <input type="text" class="form-control" id="score3" value="">
+      </div>
+    </div>
+  </div>
+</div></form>
+                </div>
+                <div class="modal-footer">
+                    <a id="close" name="close" type="button" class="btn btn-default"
+                       href="javascript:saveScore();">保存设置</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <ol class="breadcrumb">
+        <li><a href="{% url 'index' %}">主页</a></li>
+        <li class="active">作业结果分析</li>
+    </ol>
+    <div id="toolbar">
+        <div class="form-inline" role="form">
+            <div class="form-group">
+                <select class="form-control" id="classname" name="classname">
+                    <option value="0" selected="selected">请选择需要查询的班级</option>
+                    {% for classname in classnames %}
+                        <option value="{{ classname.pk }}">{{ classname.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button id="ok" type="submit" class="btn btn-default">查询</button>
+            <button data-toggle="modal" data-target="#myModal" id="reCal" type="submit" class="btn btn-default">重新计算</button>
+            <a class="btn btn-default" href="javascript:showScore();">设置成绩占比</a>&nbsp;<span style="white-space: nowrap;" id="update_time"></span>
+        </div>
+    </div>
+<script>
+function showScore(){
+  var val = $("#classname option:selected").val();
+  if(val!="0"){
+    $.ajax({
+      type:'GET',
+      dataType:'json',
+      data:{id:val},
+      url:"{% url 'get_score_config' %}",
+      success:function(response){
+        var scoreInfo = eval('(' + JSON.stringify(response) + ')');
+        $('#score3').val(scoreInfo['pscore']);
+        $('#score1').val(scoreInfo['sign']);
+        $('#score2').val(scoreInfo['mscore']);
+        $('#scoreModal').modal('show');
+      }
+    });
+  }else{
+    toastr.error('请先选择需要设置成绩比例的班级');
+  }
+}
+function saveScore(){
+  var val = $("#classname option:selected").val();
+  if(val!="0"){
+    score1 = parseFloat($('#score1').val());
+    score2 = parseFloat($('#score2').val());
+    score3 = parseFloat($('#score3').val());
+    if(score1+score2+score3==1){
+      $.ajax({
+        type:'POST',
+        dataType:'json',
+        data:{id:val,pscore:$('#score3').val(),sign:$('#score1').val(),mscore:$('#score2').val()},
+        url:"{% url 'save_score_config' %}",
+        success:function(response){
+          var result = eval('(' + JSON.stringify(response) + ')');
+          if(result['result']=='ok'){
+            $('#scoreModal').modal('hide');
+            toastr.success('已成功保存成绩占比数据');
+          }
+        }
+      });
+    }else{
+      toastr.error('成绩占比的总和不为1，请核实');
+    }
+  }else{
+    toastr.error('请先选择需要设置成绩比例的班级');
+  }
+}
+</script>
+    <table id="table"
+           data-side-pagination="server"
+           data-pagination="true"
+           data-classes="table table-hover table-condensed"
+           data-toolbar="#toolbar"
+           data-striped="true"
+           data-query-params="queryParams"
+           data-show-export="true"
+    >
+    </table>
+    <script>
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
+        });
+        var $table = $('#table');
+        var $signTable = $('#signTable');
+        var clock;
+        var currentRow = {};
+        function queryParams(params) {
+            $('#toolbar').find('select[name]').each(function () {
+                params[$(this).attr('name')] = $(this).val();
+            });
+            params['my'] = false;
+            return params;
+        }
+
+        function signQueryParams(params) {
+            var className = $("#classname option:selected").val();
+            params['className'] = className;
+            params['studentId'] = currentRow.studentId;
+            return params;
+        }
+        
+        function getUpdateTime() {
+          var val = $("#classname option:selected").val();
+          if(val!="0"){
+            $.ajax({
+                type:'GET',
+                dataType:'json',
+                data:{id:val},
+                url:"{% url 'get_update_time' %}",
+                success:function(response){
+                    var Info = eval('(' + JSON.stringify(response) + ')');
+                    if(Info['update_time']!=undefined)
+                        $('#update_time').text('数据更新于：' + Info['update_time']);
+                    else
+                        $('#update_time').text('');
+                }
+            });
+          }else{
+            $('#update_time').text('');
+          }
+        }
+
+        $('#ok').on('click',function(e){
+            e.preventDefault() //取消默认行为
+            $('#table').bootstrapTable('destroy').bootstrapTable({
+                url: "{% url 'get_homework_result' %}",
+                sidePagination: 'server',
+                pagination: true
+            });
+            //getUpdateTime();
+        })
+
+        $reCal = $('#reCal');
+        $(function () {
+            $('#reCal').click(function () {
+                $('#table').bootstrapTable('destroy').bootstrapTable({
+                    url: "{% url 'get_finished_homework' %}",
+                    sidePagination: 'server',
+                    pagination: true
+                });
+                var w=0;
+                $('#loading').css({'width':0});
+                clock=self.setInterval(function(){
+                    if(w>90)
+                        w = w + 1;
+                    else if(w>70)
+                        w = w + 2;
+                    else if(w>50)
+                        w = w + 3;
+                    else if(w>30)
+                        w = w + 4;
+                    else
+                        w = w + 5;
+                    $('#loading').css({'width':w+'%'});
+                    //console.log(w+'%');
+                },2000);
+            });
+        });
+
+        function showTable($el, scores){
+            //alert('showTable'+JSON.stringify(scores));
+            scores = eval('(' + JSON.stringify(scores) + ')');
+            var i, j, row,
+                columns = [],
+                data = [];
+
+            colCount = 0;
+            workCount = 0;//作业数量
+            expCount = 0;//实验数量
+            total_pscore = 0;//计算每个学生的平时成绩总分
+            if(scores.length!=undefined)
+                for(var i in scores[0]){
+                    colCount++;
+                    if(scores[0][i].work_kind == "作业")
+                        workCount++;
+                    if(scores[0][i].work_kind == "实验")
+                        expCount++;
+                }
+
+            var table_head;
+            var table_body;
+            table_head=[];
+            table_body=[];
+            table_head.push({field:'id',title:'学号',rowspan:2,align:'center',valign:'middle',sortable:'true'});
+            table_head.push({field:'name',title:'姓名',rowspan:2,align:'center',valign:'middle'});
+            table_head.push({field:'sign_info',title:'签到<br>数据',rowspan:2,align:'center',valign:'middle',sortable:'True',sortName:'sortData',formatter:test,events:showModal});
+            table_head.push({field:'mooc_score',title:'慕课<br>成绩',rowspan:2,align:'center',valign:'middle',sortable:'True',});
+            table_head.push({field:'total_pscore',title:'作业<br>成绩',rowspan:2,align:'center',valign:'middle',sortable:'True'});
+            if(workCount){
+              table_head.push({title: '平时作业',colspan: workCount,align: 'center'});
+            }
+            if(expCount){
+              table_head.push({title: '实验',colspan: expCount,align: 'center'});
+            }
+            columns.push(table_head)
+
+            for (var i = 1; i <=workCount; i++) {
+              table_body.push({
+                  field: 'pscore' + i,  //pscore表示平时成绩
+                  title: '作业' + i + '<span id="pscore' + i + '" title="信息更新中……" class="glyphicon glyphicon-info-sign text-primary" aria-hidden="true"></span>',
+                  align: 'center',
+                  formatter: scoreFormatter
+              });
+            }
+            for (var i = 1; i <= expCount; i++) {
+              table_body.push({
+                  field: 'escore' + i, //escore表示实验成绩
+                  title: '实验' + i + '<span id="escore'+ i + '" title="信息更新中……" class="glyphicon glyphicon-info-sign text-primary" aria-hidden="true"></span>',
+                  align: 'center',
+                  formatter: scoreFormatter
+              });
+            }
+            table_head.push({field:'final_score',title:'综合<br>成绩',rowspan:2,align:'center',valign:'middle',sortable:'True',});
+            columns.push(table_body);
+
+            for (var i in scores) {
+                student = eval('(' + JSON.stringify(scores[i]) + ')');
+                row = {};
+                row['id'] = student['id'];
+                row['name'] = student['name'];
+                row['sign_info'] = String(student['signedCount']) + '/' + String(student['signCount']);
+                row['sortData'] = student['signedCount'];
+                row['mooc_score'] = student['moocScore'];
+
+                var k = 1;
+                var p = 1;
+                for (j = 1; j <= colCount-7; j++) {
+                    //row['score' + j] = student['score' + j];
+                    if(typeof student['score'+j] == "undefined")
+                      continue;
+                    //console.log(student['score'+j]);
+                    if(student['score' + j].work_kind == "作业"){
+                      row['pscore' + k] = student['score' + j];
+                      if(!isNaN(student['score' + j].score)){
+                          total_pscore += student['score' + j].score;
+                      }
+                      k++;
+                    } else{
+                      row['escore' + p] = student['score' + j];
+                      if(!isNaN(student['score' + j].score)){
+                          total_pscore += student['score' + j].score;
+                      }
+                      p++;
+                    }
+                }
+                row['total_pscore'] = total_pscore;
+                row['final_score'] = student['final_score'];
+                row['studentId'] = student['studentId'];
+                total_pscore = 0;
+                data.push(row);
+            }
+
+            $el.bootstrapTable('destroy').bootstrapTable({
+                columns: columns,
+                data: data,
+                sidePagination: 'client',
+                pagination: true,
+                pageSize: 500,
+                pageList: []
+            }); 
+        }
+
+        function scoreFormatter(value, row, index){
+            if(value['score']=='无')
+                return '无';
+            else
+                return '<a target="_blank" href="{% url "_show_homework_result" %}' + value['pk'] + '/" title="查看详情">' + value['score'] + '</a>';
+        }
+
+        function get_workImformation(){
+          var val = $("#classname option:selected").val();
+
+          $.ajax({
+            type:'GET',
+            dataType:'json',
+            data:{class_name:val},
+            url:"{% url 'get_finished_homework_workInformation' %}",
+            success:function(response){
+              var workInfo = eval('(' + JSON.stringify(response) + ')');
+              var stuCount = workInfo['stuCount'];
+              if( ! $.isEmptyObject(workInfo['实验']) ){
+                var exp = workInfo['实验'];
+                var selector;
+                var Info;
+                for(var i in exp){
+                  var info = exp[String(i)];  //info是一个列表，下标从0到2,以此是 0：作业未写人数; 1：作业名称; 2：该作业的总分
+                  selector = "#escore" + i;
+                  var submmitCount = stuCount - info[0];//submmitCount表示提交人数
+                  Info = info[1] + '\n' + "应交人数:" + stuCount + '\n'+ "实交人数:" + submmitCount + '\n' + "满分:" + info[2];
+                  $(selector).attr('title',Info);
+                }
+              }
+
+              if( ! $.isEmptyObject(workInfo['作业']) ){
+                var work = workInfo['作业'];
+                for(var i in work){
+                  var info = work[String(i)];
+                  selector = "#pscore" + i;
+                  var submmitCount = stuCount - info[0];
+                  Info = info[1] + '\n' + "应交人数:" + stuCount + '\n'+ "实交人数:" + submmitCount + '\n' + "满分:" + info[2] + '\n' + "开始时间:" + info[3] + '\n' + "截止时间:" + info[4];
+                  $(selector).attr('title',Info);
+                }
+              }
+            }
+          })
+        }
+
+        $('#table').on('load-success.bs.table', function () {
+            //window.alert('load-success');
+            data = $('#table').bootstrapTable('getData');
+            showTable($('#table'),data);
+            get_workImformation();
+            $('#loading').animate({'width':'100%'},200);
+            window.clearInterval(clock);
+            //$('#myModal').modal('hide');
+            setTimeout(function(){$('#closeModal').trigger('click');},1000);
+            getUpdateTime(); 
+        });
+
+        function buildTable($el){
+            $el.bootstrapTable({
+                url: "{% url 'get_finished_homework' %}",
+                sidePagination: 'server',
+                pagination: true
+            });
+        }
+
+        function test(value,row,index){
+            return '<a class="onclick" style="cursor:pointer">' + value + '</a>'
+        }
+
+        window.showModal = {
+            'click .onclick': function (e, value, row, index) {
+                currentRow = row
+                $signTable.bootstrapTable('refresh')
+                $('#signModal').modal('show')
+            },
+        }
+
+        $(function () {
+            buildTable($('#table'));
+        });
+    </script>
+
+{% endblock %}

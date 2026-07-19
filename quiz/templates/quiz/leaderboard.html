@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .my-rank-box { text-align: center; padding: 20px; margin-bottom: 25px; border-radius: 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+    .my-rank-box h2 { margin: 5px 0; }
+    .rank-table .highlight { background: #fffde7 !important; font-weight: bold; }
+    .rank-table .rank-1 { color: #c8a200; }
+    .rank-table .rank-2 { color: #888; }
+    .rank-table .rank-3 { color: #cd7f32; }
+</style>
+
+{% for banji_data in banji_rankings %}
+    <h3><i class="fa fa-users"></i> {{ banji_data.banji_name }}</h3>
+
+    {% if banji_data.my_rank %}
+    <div class="my-rank-box">
+        <p>我的排名</p>
+        <h2>第 {{ banji_data.my_rank }} 名</h2>
+        <p>{{ banji_data.my_points }} 分 / 共 {{ banji_data.total_students }} 人</p>
+    </div>
+    {% endif %}
+
+    <div class="table-responsive">
+        <table class="table table-hover rank-table">
+            <thead>
+                <tr><th>排名</th><th>学号</th><th>姓名</th><th>积分</th></tr>
+            </thead>
+            <tbody>
+                {% for row in banji_data.rankings %}
+                <tr class="{% if row.user_id == user.id %}highlight{% endif %}">
+                    <td>
+                        {% if row.rank == 1 %}<i class="fa fa-trophy rank-1"></i>
+                        {% elif row.rank == 2 %}<i class="fa fa-trophy rank-2"></i>
+                        {% elif row.rank == 3 %}<i class="fa fa-trophy rank-3"></i>
+                        {% endif %}
+                        <strong>{{ row.rank }}</strong>
+                    </td>
+                    <td>{{ row.user__id_num }}</td>
+                    <td>{{ row.user__username }}</td>
+                    <td><span class="badge alert-success">{{ row.points }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% empty %}
+    <div class="alert alert-info">你还没有加入任何班级，排行榜暂无数据。</div>
+{% endfor %}
+{% endblock %}

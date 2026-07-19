@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .class-card { margin-bottom: 20px; }
+    .class-card .panel-body { padding: 20px; }
+    .stat-item { text-align: center; }
+    .stat-item h3 { margin: 5px 0; }
+    .stat-item small { color: #999; }
+    .correct-rate { font-size: 24px; font-weight: bold; }
+    .rate-high { color: #5cb85c; }
+    .rate-mid { color: #f0ad4e; }
+    .rate-low { color: #d9534f; }
+</style>
+
+{% if banji_data %}
+    {% for bj in banji_data %}
+    <div class="class-card">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <strong>{{ bj.name }}</strong>
+                <a href="{% url 'quiz_teacher_class' bj.id %}" class="btn btn-primary btn-xs pull-right">
+                    查看详情 <i class="fa fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-3 stat-item">
+                        <small>班级人数</small>
+                        <h3>{{ bj.student_count }}</h3>
+                    </div>
+                    <div class="col-md-3 stat-item">
+                        <small>已参与答题</small>
+                        <h3>{{ bj.active_count }}</h3>
+                    </div>
+                    <div class="col-md-3 stat-item">
+                        <small>总答题数</small>
+                        <h3>{{ bj.total_answered }}</h3>
+                    </div>
+                    <div class="col-md-3 stat-item">
+                        <small>正确率</small>
+                        <span class="correct-rate
+                            {% if bj.correct_rate >= 70 %}rate-high
+                            {% elif bj.correct_rate >= 40 %}rate-mid
+                            {% else %}rate-low{% endif %}">
+                            {{ bj.correct_rate }}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info">你还没有负责的班级，请先创建班级并添加学生。</div>
+{% endif %}
+{% endblock %}

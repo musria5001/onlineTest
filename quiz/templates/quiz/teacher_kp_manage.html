@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .kp-row { cursor: pointer; }
+    .kp-row:hover { background: #f5f5f5; }
+</style>
+
+{% if kp2_data %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr><th>课程</th><th>一级知识点</th><th>二级知识点</th><th>题目数</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+            {% for kp2 in kp2_data %}
+            <tr class="kp-row">
+                <td>{{ kp2.course_name }}</td>
+                <td>{{ kp2.kp1_name }}</td>
+                <td>{{ kp2.name }}</td>
+                <td><span class="badge {% if kp2.total > 0 %}alert-success{% endif %}">{{ kp2.total }}</span></td>
+                <td>
+                    <a href="{% url 'quiz_teacher_kp_questions' kp2.id %}" class="btn btn-primary btn-xs">
+                        <i class="fa fa-list"></i> 管理题目
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    暂无知识点。请先在 <a href="{% url 'admin:index' %}" target="_blank">Django后台</a> 添加课程和知识点。
+</div>
+{% endif %}
+{% endblock %}

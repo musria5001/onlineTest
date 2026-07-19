@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}{{ SITE_NAME }}{% endblock %}
+{% load staticfiles %}
+{% load static %}
+{% block extrastyle %}
+{% endblock %}
+
+{% block content %}
+<script>
+function stop(){
+    var video = document.getElementById("index-video");
+    video.pause();
+}
+$(document).ready(function(){
+    Liy_Info = new Array('每天进步一点点！','好好学习，天天向上！',
+                         '差之毫厘，谬以千里。','工欲善其事，必先利其器。',
+                         '不积跬步，无以至千里，<br>不积小流，无以成江海。',
+                         '黑发不知勤学早，白首方悔读书迟。','书山有路勤为径，学海无涯苦作舟。',
+                         '业精于勤，荒于嬉，<br>行成于思，毁于随。','学而不思则罔，思而不学则殆。',
+                         '三人行，必有我师焉。<br>择其善者而从之，其不善者而改之。',
+                         '温故而知新，可以为师矣。','知之为知之，不知为不知，是知也。',
+                         '粗缯大布裹生涯，腹有诗书气自华。',
+                         '夫君子之行，静以修身，俭以养德，<br>非淡泊无以明志，非宁静无以致远。',
+                         '千里之行，始于足下。','学习很苦，坚持很酷！',
+                         '路虽远，行则将至；<br>事虽难，做则必成。',);
+    Liy_InfoId = Math.floor(Math.random()*Liy_Info.length);
+    $('#tips').html(Liy_Info[Liy_InfoId]);
+});
+</script>
+    <div>
+        <div class="site-index">
+            <div class="jumbotron">
+{#                                <div class="alert alert-danger" role="alert">系统维护中，部分作业可能！</div>#}
+                <h1 name='tips' id='tips'></h1>
+                <p class="lead">南京邮电大学{{ SITE_NAME }}欢迎您！</p>
+
+                <p><a class="btn btn-lg btn-success" href="{% url 'list_do_homework' %}">进入作业列表</a>
+                    <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal">
+                        查看使用教程
+                    </button>
+                </p>
+
+            </div>
+            <!-- Button trigger modal -->
+
+
+            <!-- Modal -->
+            <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog  modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" onclick="stop();"><span
+                                    aria-hidden="true">&times;</span><span class="sr-only">关闭</span></button>
+                            <h4 class="modal-title" id="myModalLabel">平台使用说明</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="container video-container" id="video-container">
+                                <video width="" height="auto" controls id="index-video" preload="metadata">
+                                    <source src="{% static 'videos/intro.mp4' %}" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="body-content">
+
+                <div class="row">
+                    <div class="col-lg-4">
+                        <h2>高级语言程序设计<br>（C&amp;C++）</h2>
+
+                        <p>
+                            本课程是各专业的大学生所必须掌握的一门核心基础课程。本课程的教学目的是，通过理论教学与上机实践，使学生掌握C语言的基本语法，培养初步的动手编程能力，形成良好的编程风格，熟悉常用的简单算法，并了解结构化程序设计的思想和方法。该课程是诸多专业课程的先修课程，也是自学其他高级语言的基础。</p>
+
+                        <p><a class="btn btn-default" href="https://pan.baidu.com/s/15B-ZzbjFHNVBEWW7t0QZgw"
+                              target="_blank">下载开发环境(提取码:gc6k) &raquo;</a>
+                        <a class="btn btn-default" href="https://pan.baidu.com/s/1dUxi2WMyN1uY9N_Au8_vKQ"
+                              target="_blank">教学资源 &raquo;</a></p>
+                    </div>
+                    <div class="col-lg-4">
+                        <h2>程序设计基础<br>（ Java语言）</h2>
+
+                        <p>
+                            我们的生活已经离不开计算机了，每天都在用计算机上的软件做事情，这些软件究竟是如何写出来的呢？计算机到底是以怎样的方式来解决问题的呢？程序设计这门课可以让你学习到计算机解决问题的基本方法。
+                            本课程是面向计算机新人的程序设计入门课程，Java语言是教学的媒介，但不是课程的目标。</p>
+
+                        <p><a class="btn btn-default"
+                              href="https://www.jetbrains.com/zh-cn/idea/promo/"
+                              target="_blank">下载开发环境 &raquo;</a></p>
+                    </div>
+                    <div class="col-lg-4">
+                        <h2>程序设计基础<br>（ Python语言）</h2>
+
+                        <p>本课程面向各类热爱编程的同学，培养运用 Python 编程语言解决实际问题的编程能力。使学生掌握 Python
+                            语言的基本语法、语句以及结构化程序设计的基本思想和方法，了解基本的算法和数据结构，培养良好的程序设计风格，为进一步学习其他专业课程和从事软件开发工作打下坚实的基础。</p>
+
+                        <p><a class="btn btn-default" href="https://www.python.org/downloads/"
+                              target="_blank">下载开发环境 &raquo;</a>
+                        <a class="btn btn-default" href="/static/file/2021Python.zip"
+                              target="_blank">2021培训素材 &raquo;</a></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}

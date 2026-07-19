@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.xls
+*.xlsx
+log.txt
+.DS_Store
+/tmp/
+/home/
+=1.10.0

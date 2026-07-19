@@ -1,0 +1,344 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    我的签到
+{% endblock %}
+
+{% block extrahead %}
+{% load static %}
+<script src="{% static 'assets/js/jquery-confirm.min.js' %}"></script>
+<link href="{% static 'assets/css/jquery-confirm.min.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<script type="text/javascript" src="https://api.map.baidu.com/api?v=2.0&ak=NW1qGiEHfWeZLoVMg6ZtxeC9dyswLbGR"></script>
+    <ol class="breadcrumb">
+        <li><a href="{% url 'index' %}">主页</a></li>
+        <li class="active">签到管理</li>
+        <li class="active">我的签到</li>
+    </ol>
+    
+    
+    <div id="positionGet" hidden>{{ onGoing.position }}</div>
+    <div id="idGet" hidden>{{ onGoing.id }}</div>
+    {% if onGoing %}
+        <h1> 正在进行中 </h1>
+        <div class="table-responsive">
+            <table class="table" style="margin-bottom: 0;">
+                <tr>
+                    <th>课程名称</th>
+                    <th>开始时间</th>
+                    <th>截止时间</th>
+                </tr>
+                <tr>
+                    <th>{{ onGoing.name }}</th>
+                    <th>{{ onGoing.startTime }}</th>
+                    <th>{{ onGoing.closedTime }}</th>
+                </tr>
+            </table>
+        </div>
+    {% else %}
+        <h1> 暂时没有正在进行中的签到 </h1>
+    {% endif %}
+
+
+    <div class="attend">
+        <h3>签到</h3>
+        <input id="attend" class="btn btn-primary" type="button" onclick="check()" disabled="disabled"
+            {% if not onGoing %}
+                onGoing = '0'
+            {% endif %}
+        {% if not onGoing %}
+            value="无签到事项"
+        {% else %}
+            value="获取地理位置中"
+        {% endif %}>
+        {% if onGoing %}
+        <a id="leave" class="btn btn-warning" data-toggle="modal" data-target="#myModal">我要请假</a>
+        <p/><div style="width:95%; margin: auto; height:300px; font-size:12px" id="allmap"></div>
+        <p id="nowPos"></p>
+        {% endif %}
+<!--
+        <h3>请假</h3>
+  <div class="form-group">
+    <label for="file_input">点击“选择文件”上传假条照片</label>
+    <input type="file" id="file_input" accept=".png,.jpg,.jpeg">
+    <img id="result" width="80%"></img>
+  </div>
+            <div class="col-lg-6">
+                <div class="input-group">
+                    <input id="message" type="text" class="form-control" placeholder="请输入你的请假理由">
+                    <span class="input-group-btn">
+                        <button id="sub-btn" class="btn btn-info" type="submit">请假</button>
+                    </span>
+                </div>
+            </div>
+-->
+<!--
+        <input id="message" type="text" class="form-control" placeholder="请输入你的请假理由">
+        <button id="sub-btn" type="submit" class="btn btn-info">请假</button>
+-->
+    </div>
+
+    <hr/>
+    <h3>签到记录</h3>
+    <div class="table-responsive">
+        <table class="table">
+            <tr>
+                <th>课程名称</th>
+                <th>开始时间</th>
+                <th>结束时间</th>
+                <th>签到信息</th>
+            </tr>
+
+            {% for i in checked %}
+                <tr>
+                    <th>{{ i.name }}</th>
+                    <th>{{ i.begin }}</th>
+                    <th>{{ i.end }}</th>
+                    <th>{{ i.status }}
+                        {% if i.status == '未签到' %}
+                            <a style="cursor: pointer;" data-toggle="modal" data-target="#myModal" onclick="supLeave('{{i.id}}')">请假</a>
+                        {% endif %}
+                    </th>    
+                </tr>               
+            {% endfor %}
+        </table>
+    </div>
+
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" onclick="stop();"><span
+                        aria-hidden="true">&times;</span><span class="sr-only">关闭</span></button>
+                <h4 class="modal-title" id="myModalLabel">请上传假条并填写请假理由</h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="file_input1">点击“选择文件”上传假条照片</label>
+                    <input type="file" id="file_input" accept=".png,.jpg,.jpeg">
+                    <img id="result" width="30%"></img>
+                </div>
+                <div class="form-group">
+                    <div class="input-group">
+                        <input id="message" type="text" class="form-control" placeholder="请输入你的请假理由">
+                        <span class="input-group-btn">
+                            <button id="sub-btn" class="btn btn-info" type="submit">请假</button>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+ 
+<script>
+    $("#sign_student_manage").addClass("active");
+    $("#sign_user_manage").css("display", 'block');
+    $("#sign_manage").addClass("active");
+
+    let lengthNow
+    const map = new BMap.Map("allmap")
+    map.centerAndZoom("南京", 15) //初始化地图,设置城市和地图级别。
+    if($('#positionGet').text()!='' && $('#positionGet').text()!='None')
+        temp = JSON.parse($('#positionGet').text())
+    else
+        temp = JSON.parse('{}');
+    const positionGet = temp;
+    if($('#idGet').text()!='')
+        temp = JSON.parse($('#idGet').text());
+    else
+        temp = JSON.parse('{}');
+    let eventId = temp;
+    $("#leave").on('click', function(e){
+        supLeave(eventId);
+    });
+    
+getLocation();
+// H5获取当前位置
+function getLocation(){
+  if(navigator.geolocation){
+    $('#nowPos').html($('#nowPos').html() + "正在尝试使用H5获取当前地理位置");
+    navigator.geolocation.getCurrentPosition(showPosition,showError,{timeout:10000});
+  }else{
+    $('#nowPos').html($('#nowPos').html() + "浏览器不支持地理定位，请更换浏览器后重试");
+  }
+}
+//获取用户经纬度
+function showPosition(position){
+  $('#nowPos').html($('#nowPos').html() + "<br>使用H5获取当前地理位置成功");
+  //GPS经纬度
+  let x = position.coords.latitude;
+  let y = position.coords.longitude;
+  var gpsPoint = new BMap.Point(y, x);
+  setTimeout(function(){
+    var convertor = new BMap.Convertor();
+    var pointArr = [];
+    pointArr.push(gpsPoint);
+    convertor.translate(pointArr, 1, 5, translateCallback)
+  }, 1000);
+}
+//将GPD经纬度转为百度地图经纬度
+function translateCallback(data){
+  $('#nowPos').html($('#nowPos').html() + "<br>正在将H5地理坐标转换为百度地图坐标");
+  point = data.points[0];
+  nowPointLng = data.points[0].lng;
+  nowPointLat = data.points[0].lat;
+  showmap(nowPointLng,nowPointLat);
+  //initMap();
+}
+//报错信息
+function showError(error){
+  switch(error.code) {
+    case error.PERMISSION_DENIED:
+      $('#nowPos').html($('#nowPos').html() + "<br>H5定位失败，用户拒绝请求地理定位");
+      break;
+    case error.POSITION_UNAVAILABLE:
+      $('#nowPos').html($('#nowPos').html() + "<br>H5定位失败，位置信息不可用"); 
+      break;
+    case error.TIMEOUT:
+      $('#nowPos').html($('#nowPos').html() + "<br>H5定位失败，请求获取用户位置超时");
+      break;
+    case error.UNKNOWN_ERROR:
+      $('#nowPos').html($('#nowPos').html() + "<br>H5定位失败，定位系统失效");
+      break;
+  }
+  $('#nowPos').html($('#nowPos').html() + "<br>正在尝试使用百度地图API获取当前地理位置");
+  var geolocation = new BMap.Geolocation();
+  geolocation.getCurrentPosition(function (r) {
+    if (this.getStatus() == BMAP_STATUS_SUCCESS) {
+        position = new BMap.Marker(r.point)
+        position = JSON.stringify([r.point.lng, r.point.lat]);
+        showmap(r.point.lng,r.point.lat);
+    } else {
+        $('#nowPos').html($('#nowPos').html() + "<br>百度定位失败：" + this.getStatus())
+    }
+  }, {
+    enableHighAccuracy: true
+  });
+}
+//处理定位点信息
+function showmap(lng,lat){
+  console.log("将地理位置信息显示在地图上");
+  const pointA = new BMap.Point(positionGet[0], positionGet[1]);
+  console.log('Sign Position: ' + positionGet[0] + ',' + positionGet[1])
+  pointB = new BMap.Point(lng, lat);
+  var mk = new BMap.Marker(pointB);
+  map.addOverlay(mk);
+  map.panTo(pointB);
+  map.setCenter(pointB);
+  console.log('Your Position:' + lng + ',' + lat);
+  $('#nowPos').html($('#nowPos').html() + '<br>当前设备的经纬度为：' + lng.toFixed(6) + ',' + lat.toFixed(6));
+  //pointB 为根据定位设置出的位置
+  lengthNow = (map.getDistance(pointA, pointB)).toFixed(2)
+  console.log('Distance:' + lengthNow);
+  $('#nowPos').html($('#nowPos').html() + '<br>离设定的签到位置距离：' + lengthNow + '米');
+  //获取两点距离,保留小数点后两位
+  var polyline = new BMap.Polyline([pointA, pointB], {
+    strokeColor: "blue",
+    strokeWeight: 6,
+    strokeOpacity: 0.5
+  });
+  let attend = $('#attend')
+  if($('#idGet').text()!='')
+    attend.val('我要签到').removeAttr('disabled');
+}
+
+function check() {
+  if (lengthNow === undefined) {
+    alert("获取地理位置失败，请刷新页面后重试。");
+    return false;
+  }
+  else if (lengthNow > 250) {
+    $.confirm({
+      title: '离指定的签到位置太远',
+      content: '建议您更换浏览器并授予其访问当前设备位置信息的权限后重新尝试签到',
+      confirmButton: '继续使用当前位置签到',
+      cancelButton: '取消',
+      confirmButtonClass: 'btn-info',
+      cancelButtonClass: 'btn-info',
+      confirm: function(){
+          attendance();
+      }
+    });
+    return false; 
+  }else{
+    attendance();
+  }
+}
+    function attendance() {
+        var btn = $("#attend");
+        btn.attr('disabled',true);
+        const url = '/sign/checkout/' + eventId
+        $.post(url,{distance:lengthNow,studentposition:''+pointB['lng']+','+pointB['lat']}, function (res, status) {
+            if (status === 'success') {
+                if (res.success) {
+                    alert("签到成功")
+                    location.reload()
+                } else {
+                    alert(res.errMsg)
+                }
+            } else {
+                alert('服务器抽风了QAQ，程序员小哥哥维修中')
+            }
+            btn.attr('disabled',false);
+        })
+    }
+
+    const result = $('#result')
+    const input = $('#file_input')
+
+    input.change(function() {
+        console.log(input)
+        const file = input[0].files[0]
+        const fileReader = new FileReader()
+        fileReader.onloadend = function () {
+            if (fileReader.readyState == fileReader.DONE) {
+                result.attr('src', fileReader.result)
+            }
+        }
+        fileReader.readAsDataURL(file)
+        console.log(result)
+    })
+
+
+    $('#sub-btn').on('click', function(e){
+        console.log('click send req')
+        e.preventDefault() //取消默认行为
+
+        if (message === '' || result.attr('src') === undefined) {
+            alert("请完善理由或选择假条")
+        }else {
+            let formData = new FormData();
+            formData.append('cause', $('#message').val());
+            formData.append('leaveAsk', $('#file_input').prop('files')[0]);
+
+            $.ajax({
+                url: '/sign/leave/' + eventId, 
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false
+            }).done(function (result, statue) {
+                if (statue === 'success') {
+                    if (result.success) {
+                        alert('假条已提交')
+                        location.reload()
+                    } else {
+                        alert(result.errMsg)
+                    }
+                } else {
+                    alert('服务器抽风了QAQ，程序员小哥哥维修中')
+                }
+            })
+        }
+    })
+
+    function supLeave(supEventId) {
+        eventId = supEventId;
+    }
+    
+</script>
+{% endblock %}

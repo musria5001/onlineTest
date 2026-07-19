@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .complete-box { text-align: center; margin-top: 50px; }
+    .complete-box .fa { font-size: 80px; color: #5cb85c; margin-bottom: 20px; }
+    .complete-box h3 { margin-bottom: 10px; }
+    .complete-box .stats { font-size: 18px; color: #666; margin-bottom: 30px; }
+</style>
+
+<div class="complete-box">
+    <i class="fa fa-check-circle"></i>
+    <h3>恭喜！本知识点全部答完</h3>
+    <p class="stats">{{ correct }} / {{ total }} 题正确</p>
+    {% if assignment_id %}
+    <a href="{% url 'quiz_student_assignments' %}" class="btn btn-primary btn-lg">
+        <i class="fa fa-reply"></i> 返回作业列表
+    </a>
+    {% else %}
+    <a href="{% url 'quiz_kp_tree' %}" class="btn btn-primary btn-lg">
+        <i class="fa fa-reply"></i> 返回知识点列表
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
