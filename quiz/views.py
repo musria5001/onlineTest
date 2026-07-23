@@ -212,8 +212,10 @@ def my_points(request):
     if request.user.isTeacher():
         raise Http404()
 
-    total_points = AnswerRecord.objects.filter(user=request.user, is_correct=True).count()
+    total_correct = AnswerRecord.objects.filter(user=request.user, is_correct=True).count()
     total_answered = AnswerRecord.objects.filter(user=request.user).count()
+    total_points = total_correct
+    accuracy = round(total_correct * 100 / total_answered, 1) if total_answered > 0 else 0
 
     # 按二级知识点汇总
     kp2_data = []
@@ -233,6 +235,8 @@ def my_points(request):
         'position': 'quiz_points',
         'total_points': total_points,
         'total_answered': total_answered,
+        'total_correct': total_correct,
+        'accuracy': accuracy,
         'kp2_data': kp2_data,
     })
 
