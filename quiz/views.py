@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, Http404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
-from django.db.models import Count
+from django.db.models import Count, Sum
 
 from judge.models import ClassName, KnowledgePoint1, KnowledgePoint2, ChoiceProblem, DuchengProblem
 from work.models import BanJi
@@ -26,24 +26,58 @@ def kp_tree(request):
     course_data = []
     for course in courses:
         kp1_list = []
-        for kp1 in course.knowledgepoint1_set.all():
+        for idx, kp1 in enumerate(course.knowledgepoint1_set.all()):
             kp2_list = []
+            kp1_correct = 0
+            kp1_answered = 0
+            kp1_total = 0
+            prev_complete = True
             for kp2 in kp1.knowledgepoint2_set.all():
                 choice_count = ChoiceProblem.objects.filter(knowledgePoint2=kp2).count()
                 ducheng_count = DuchengProblem.objects.filter(knowledgePoint2=kp2).count()
                 total = choice_count + ducheng_count
-                answered = AnswerRecord.objects.filter(user=request.user, kp2=kp2).count()
-                correct = AnswerRecord.objects.filter(user=request.user, kp2=kp2, is_correct=True).count()
+                # 3轮进度
+                all_recs = AnswerRecord.objects.filter(user=request.user, kp2=kp2)
+                total_points = all_recs.aggregate(s=Sum('points'))['s'] or 0
+                completed_rounds = 0
+                if total > 0:
+                    from collections import Counter
+                    qpr = {}
+                    for r in all_recs:
+                        qid = r.choice_question_id if r.question_type == 'choice' else r.ducheng_question_id
+                        qpr.setdefault(r.round_num, set()).add(qid)
+                    completed_rounds = sum(1 for r, qs in qpr.items() if len(qs) >= total)
+                kp1_correct += int(total_points)
+                kp1_answered += all_recs.count()
+                kp1_total += total
                 kp2_list.append({
                     'id': kp2.id,
                     'name': kp2.name,
                     'total': total,
-                    'answered': answered,
-                    'correct': correct,
-                    'complete': total > 0 and answered >= total,
+                    'answered': all_recs.count(),
+                    'correct': int(total_points),
+                    'completed_rounds': completed_rounds,
+                    'max_rounds': 3,
+                    'complete': completed_rounds >= 3,
+                    'locked': not prev_complete and total > 0,
                 })
+                if total > 0:
+                    prev_complete = prev_complete and (completed_rounds >= 3)
             if kp2_list:
-                kp1_list.append({'id': kp1.id, 'name': kp1.name, 'kp2s': kp2_list})
+                kp1_list.append({
+                    'id': kp1.id, 'name': kp1.name, 'kp2s': kp2_list,
+                    'index': idx + 1,
+                    'total_correct': kp1_correct,
+                    'total_answered': kp1_answered,
+                    'total_qs': kp1_total,
+                    'show_ellipsis': False,
+                })
+        # 超过3章时：只显示前3章 + 省略号
+        if len(kp1_list) > 3:
+            for i, kp1_item in enumerate(kp1_list):
+                kp1_item['hidden'] = (i >= 3)  # 第4个及之后隐藏
+            kp1_list[2]['show_ellipsis'] = True
+            kp1_list[2]['remaining'] = len(kp1_list) - 3
         if kp1_list:
             course_data.append({'id': course.id, 'name': course.name, 'kp1s': kp1_list})
 
@@ -66,63 +100,84 @@ def answer_question(request, kp2_id):
     kp2 = get_object_or_404(KnowledgePoint2, pk=kp2_id)
     assignment_id = request.GET.get('assignment')
 
-    # 找到未答过的选择题和填空题
-    answered_choice = AnswerRecord.objects.filter(
-        user=request.user, kp2_id=kp2_id, question_type='choice'
-    ).values_list('choice_question_id', flat=True)
-    answered_ducheng = AnswerRecord.objects.filter(
-        user=request.user, kp2_id=kp2_id, question_type='ducheng'
-    ).values_list('ducheng_question_id', flat=True)
-
-    choice_qs = ChoiceProblem.objects.filter(knowledgePoint2__id=kp2_id).exclude(id__in=answered_choice)
-    ducheng_qs = DuchengProblem.objects.filter(knowledgePoint2__id=kp2_id).exclude(id__in=answered_ducheng)
-
-    total = choice_qs.count() + ducheng_qs.count()
-
-    # 随机从两种题型中选一道未答的
-    qtype = None
-    question = None
-    import random
-    available = []
-    if choice_qs.exists():
-        available.append(('choice', list(choice_qs)))
-    if ducheng_qs.exists():
-        available.append(('ducheng', list(ducheng_qs)))
-
-    if available:
-        qtype, pool = random.choice(available)
-        question = random.choice(pool)
-
-    if question is None:
-        correct = AnswerRecord.objects.filter(user=request.user, kp2=kp2, is_correct=True).count()
+    # 当前轮次：已完成轮数 + 1
+    all_records = AnswerRecord.objects.filter(user=request.user, kp2=kp2)
+    total_qs = ChoiceProblem.objects.filter(knowledgePoint2=kp2).count() + DuchengProblem.objects.filter(knowledgePoint2=kp2).count()
+    if total_qs == 0:
         return render(request, 'quiz/kp2_complete.html', {
-            'title': kp2.name,
-            'position': 'quiz_kp_tree',
-            'kp2': kp2,
-            'correct': correct,
-            'total': total,
+            'title': kp2.name, 'position': 'quiz_kp_tree', 'kp2': kp2,
+            'correct': 0, 'total': 0, 'round': 0, 'max_rounds': 3,
             'assignment_id': assignment_id,
         })
 
-    answered = answered_choice.count() + answered_ducheng.count()
-    correct = AnswerRecord.objects.filter(user=request.user, kp2=kp2, is_correct=True).count()
+    # 已完成轮次
+    from collections import Counter
+    q_per_round = {}  # round -> set of question ids
+    for r in all_records:
+        qid = r.choice_question_id if r.question_type == 'choice' else r.ducheng_question_id
+        q_per_round.setdefault(r.round_num, set()).add(qid)
+
+    completed_rounds = sum(1 for r, qs in q_per_round.items() if len(qs) >= total_qs)
+    current_round = completed_rounds + 1
+
+    if completed_rounds >= 3:
+        total_points = all_records.aggregate(s=Sum('points'))['s'] or 0
+        return render(request, 'quiz/kp2_complete.html', {
+            'title': kp2.name, 'position': 'quiz_kp_tree', 'kp2': kp2,
+            'correct': total_points, 'total': 3, 'round': 3, 'max_rounds': 3,
+            'assignment_id': assignment_id,
+        })
+
+    # 当前轮已正确答过的题
+    cur_correct = q_per_round.get(current_round, set())
+
+    # 选未答或本轮错过的题（排除本轮已正确的）
+    choice_available = ChoiceProblem.objects.filter(knowledgePoint2__id=kp2_id).exclude(id__in=cur_correct)
+    ducheng_available = DuchengProblem.objects.filter(knowledgePoint2__id=kp2_id).exclude(ducheng_id__in=cur_correct)
+
+    import random
+    available_pool = []
+    if choice_available.exists():
+        available_pool.append(('choice', list(choice_available)))
+    if ducheng_available.exists():
+        available_pool.append(('ducheng', list(ducheng_available)))
+
+    if not available_pool:
+        # 当前轮所有题都答对了 → 本轮完成
+        completed_rounds = current_round
+        if completed_rounds >= 3:
+            total_points = all_records.aggregate(s=Sum('points'))['s'] or 0
+            return render(request, 'quiz/kp2_complete.html', {
+                'title': kp2.name, 'position': 'quiz_kp_tree', 'kp2': kp2,
+                'correct': total_points, 'total': 3, 'round': 3, 'max_rounds': 3,
+                'assignment_id': assignment_id,
+            })
+        # 进入下一轮
+        current_round = completed_rounds + 1
+        # 重新选池
+        choice_available = ChoiceProblem.objects.filter(knowledgePoint2__id=kp2_id)
+        ducheng_available = DuchengProblem.objects.filter(knowledgePoint2__id=kp2_id)
+        available_pool = []
+        if choice_available.exists():
+            available_pool.append(('choice', list(choice_available)))
+        if ducheng_available.exists():
+            available_pool.append(('ducheng', list(ducheng_available)))
+
+    qtype, pool = random.choice(available_pool)
+    question = random.choice(pool)
 
     if qtype == 'ducheng':
         return render(request, 'quiz/answer_ducheng.html', {
-            'title': kp2.name,
-            'position': 'quiz_kp_tree',
-            'kp2': kp2,
+            'title': kp2.name, 'position': 'quiz_kp_tree', 'kp2': kp2,
             'question': question,
-            'progress': {'answered': answered, 'total': total, 'correct': correct},
+            'progress': {'round': current_round, 'max_rounds': 3, 'completed': completed_rounds},
             'assignment_id': assignment_id,
         })
 
     return render(request, 'quiz/answer.html', {
-        'title': kp2.name,
-        'position': 'quiz_kp_tree',
-        'kp2': kp2,
+        'title': kp2.name, 'position': 'quiz_kp_tree', 'kp2': kp2,
         'question': question,
-        'progress': {'answered': answered, 'total': total, 'correct': correct},
+        'progress': {'round': current_round, 'max_rounds': 3, 'completed': completed_rounds},
         'assignment_id': assignment_id,
     })
 
@@ -147,6 +202,28 @@ def submit_answer(request, kp2_id):
             return JsonResponse({'error': '题目不属于该知识点'}, status=400)
         is_correct = (selected == question.right_answer)
 
+        # 首次答错 → 给一次重试机会，不记录
+        is_retry = request.POST.get('retry') == '1'
+        if not is_correct and not is_retry:
+            return JsonResponse({
+                'correct': False, 'qtype': 'choice', 'retry': True,
+                'msg': '好像回答错误，再思考一下吧',
+            })
+
+        # 计算当前轮次
+        total_qs = ChoiceProblem.objects.filter(knowledgePoint2=kp2).count() + DuchengProblem.objects.filter(knowledgePoint2=kp2).count()
+        all_records = AnswerRecord.objects.filter(user=request.user, kp2=kp2)
+        completed_rounds = 0
+        from collections import Counter
+        q_per_round = {}
+        for r in all_records:
+            qid = r.choice_question_id if r.question_type == 'choice' else r.ducheng_question_id
+            q_per_round.setdefault(r.round_num, set()).add(qid)
+        completed_rounds = sum(1 for r, qs in q_per_round.items() if len(qs) >= total_qs)
+        current_round = completed_rounds + 1
+
+        points = 0.5 if is_retry and is_correct else (1 if is_correct else 0)
+
         banji = BanJi.objects.filter(students=request.user).first()
         assignment = None
         if assignment_id:
@@ -155,14 +232,11 @@ def submit_answer(request, kp2_id):
             except QuizAssignment.DoesNotExist:
                 pass
 
-        # 防止重复作答
-        if AnswerRecord.objects.filter(user=request.user, choice_question=question).exists():
-            return JsonResponse({'error': '已答过此题'}, status=400)
-
         AnswerRecord.objects.create(
             user=request.user, question_type='choice',
             choice_question=question, kp2=kp2, banji=banji,
             assignment=assignment, is_correct=is_correct,
+            points=points, round_num=current_round,
             student_answer=selected,
         )
         return JsonResponse({
@@ -179,9 +253,29 @@ def submit_answer(request, kp2_id):
         if not question.knowledgePoint2.filter(pk=kp2_id).exists():
             return JsonResponse({'error': '题目不属于该知识点'}, status=400)
 
-        # 正确答案可能用 ||| 分隔多个可接受的答案
         correct_answers = [a.strip() for a in question.answer.split('|||') if a.strip()]
         is_correct = student_answer in correct_answers
+
+        # 首次答错 → 给一次重试机会
+        is_retry = request.POST.get('retry') == '1'
+        if not is_correct and not is_retry:
+            return JsonResponse({
+                'correct': False, 'qtype': 'ducheng', 'retry': True,
+                'msg': '好像回答错误，再思考一下吧',
+            })
+
+        # 计算当前轮次
+        total_qs = ChoiceProblem.objects.filter(knowledgePoint2=kp2).count() + DuchengProblem.objects.filter(knowledgePoint2=kp2).count()
+        all_records = AnswerRecord.objects.filter(user=request.user, kp2=kp2)
+        from collections import Counter
+        q_per_round = {}
+        for r in all_records:
+            qid = r.choice_question_id if r.question_type == 'choice' else r.ducheng_question_id
+            q_per_round.setdefault(r.round_num, set()).add(qid)
+        completed_rounds = sum(1 for r, qs in q_per_round.items() if len(qs) >= total_qs)
+        current_round = completed_rounds + 1
+
+        points = 0.5 if is_retry and is_correct else (1 if is_correct else 0)
 
         banji = BanJi.objects.filter(students=request.user).first()
         assignment = None
@@ -191,13 +285,11 @@ def submit_answer(request, kp2_id):
             except QuizAssignment.DoesNotExist:
                 pass
 
-        if AnswerRecord.objects.filter(user=request.user, ducheng_question=question).exists():
-            return JsonResponse({'error': '已答过此题'}, status=400)
-
         AnswerRecord.objects.create(
             user=request.user, question_type='ducheng',
             ducheng_question=question, kp2=kp2, banji=banji,
             assignment=assignment, is_correct=is_correct,
+            points=points, round_num=current_round,
             student_answer=student_answer,
         )
         return JsonResponse({
@@ -212,9 +304,10 @@ def my_points(request):
     if request.user.isTeacher():
         raise Http404()
 
-    total_correct = AnswerRecord.objects.filter(user=request.user, is_correct=True).count()
-    total_answered = AnswerRecord.objects.filter(user=request.user).count()
-    total_points = total_correct
+    all_my = AnswerRecord.objects.filter(user=request.user)
+    total_correct = all_my.filter(is_correct=True).count()
+    total_answered = all_my.count()
+    total_points = int(all_my.aggregate(s=Sum('points'))['s'] or 0)
     accuracy = round(total_correct * 100 / total_answered, 1) if total_answered > 0 else 0
 
     # 按二级知识点汇总
@@ -256,11 +349,11 @@ def leaderboard(request):
         student_ids = banji.students.filter(groups=student_group).values_list('id', flat=True)
         # 同班学生按积分排名
         rankings = AnswerRecord.objects.filter(
-            user__in=student_ids, is_correct=True
+            user__in=student_ids
         ).values(
             'user__username', 'user__id_num', 'user_id'
         ).annotate(
-            points=Count('id')
+            points=Sum('points')
         ).order_by('-points')
 
         # 计算当前学生的排名

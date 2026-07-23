@@ -18,14 +18,14 @@
 <div class="question-box">
     <div class="progress-box">
         <p class="text-muted">
-            已答 <strong>{{ progress.answered }}</strong> / {{ progress.total }} 题，
-            正确 <strong style="color:#5cb85c;">{{ progress.correct }}</strong> 题
+            第 <strong>{{ progress.round }}</strong>/3 轮
+            {% if progress.round > 1 %}<span style="color:#5cb85c;">(已完成 {{ progress.completed }} 轮)</span>{% endif %}
         </p>
-        {% if progress.total > 0 %}
-        <div class="progress">
-            <div class="progress-bar progress-bar-success" style="width: {% widthratio progress.correct progress.total 100 %}%;"></div>
+        <div class="progress" style="height:10px;">
+            {% for i in "123" %}
+            <div class="progress-bar progress-bar-success" style="width:33.3%;{% if forloop.counter > progress.round %}opacity:0.15;{% elif forloop.counter < progress.round %}opacity:0.5;{% endif %}"></div>
+            {% endfor %}
         </div>
-        {% endif %}
     </div>
 
     <div class="question-title">
@@ -56,42 +56,50 @@
 
 <script>
 var answered = false;
+var retrying = false;
 
 function selectAnswer(val) {
     if (answered) return;
     answered = true;
-
-    // 禁用所有按钮
     $('.option-btn').prop('disabled', true);
-
-    // 高亮选中
     $('.option-btn[data-value="' + val + '"]').addClass('selected');
 
-    // AJAX 提交
     $.ajax({
         type: 'POST',
         url: '{% url "quiz_submit" kp2.id %}',
-        data: { question_id: {{ question.id }}, selected: val, assignment_id: '{{ assignment_id|default:"" }}' },
+        data: {
+            question_id: {{ question.id }},
+            question_type: 'choice',
+            selected: val,
+            assignment_id: '{{ assignment_id|default:"" }}',
+            retry: retrying ? '1' : '0'
+        },
         dataType: 'json',
         success: function(res) {
-            // 显示正确答案
-            $('.option-btn[data-value="' + res.right_answer + '"]').addClass('correct-answer');
-
-            var resultBox = $('#result-box');
-            if (res.correct) {
-                $('.option-btn[data-value="' + val + '"]').addClass('correct-answer');
-                resultBox.addClass('correct').html('<h4><i class="fa fa-check-circle"></i> 回答正确！+1分</h4>');
+            if (res.retry) {
+                // 首次答错，提示重试
+                $('#result-box').addClass('wrong').html('<h4><i class="fa fa-lightbulb-o"></i> ' + res.msg + '</h4>').show();
+                answered = false;
+                retrying = true;
+                $('.option-btn').prop('disabled', false).removeClass('selected');
+                setTimeout(function() { $('#result-box').fadeOut(); }, 1500);
             } else {
-                $('.option-btn[data-value="' + val + '"]').addClass('wrong-answer');
-                resultBox.addClass('wrong').html('<h4><i class="fa fa-times-circle"></i> 回答错误，正确答案是 <strong>' + res.right_answer.toUpperCase() + '</strong></h4>');
+                // 最终结果
+                $('.option-btn[data-value="' + res.right_answer + '"]').addClass('correct-answer');
+                var rb = $('#result-box');
+                if (res.correct) {
+                    rb.addClass('correct').html('<h4><i class="fa fa-check-circle"></i> 回答正确！+1分</h4>');
+                } else {
+                    $('.option-btn[data-value="' + val + '"]').addClass('wrong-answer');
+                    rb.addClass('wrong').html('<h4><i class="fa fa-times-circle"></i> 回答错误，正确答案是 <strong>' + res.right_answer.toUpperCase() + '</strong></h4>');
+                }
+                rb.show();
+                $('#next-btn').show();
             }
-            resultBox.show();
-            $('#next-btn').show();
         },
-        error: function(xhr) {
+        error: function() {
             answered = false;
             $('.option-btn').prop('disabled', false).removeClass('selected');
-            alert('提交失败，请重试');
         }
     });
 }

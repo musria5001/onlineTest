@@ -47,6 +47,8 @@ class AnswerRecord(models.Model):
     banji = models.ForeignKey(BanJi, verbose_name='所属班级', null=True, blank=True)
     assignment = models.ForeignKey(QuizAssignment, verbose_name='所属作业', null=True, blank=True, on_delete=models.SET_NULL)
     is_correct = models.BooleanField(verbose_name='是否正确', default=False)
+    points = models.FloatField(verbose_name='获得积分', default=0)
+    round_num = models.IntegerField(verbose_name='第几轮', default=1)
     student_answer = models.CharField(max_length=500, verbose_name='学生答案', blank=True, default='')
     created_time = models.DateTimeField(auto_now_add=True, verbose_name='答题时间')
 
