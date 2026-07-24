@@ -18,13 +18,10 @@
 <div class="question-box">
     <div class="progress-box">
         <p class="text-muted">
-            第 <strong>{{ progress.round }}</strong>/3 轮
-            {% if progress.round > 1 %}<span style="color:#5cb85c;">(已完成 {{ progress.completed }} 轮)</span>{% endif %}
+            已答 <strong>{{ progress.cur_answered }}/{{ progress.total }}</strong> 题
         </p>
         <div class="progress" style="height:10px;">
-            {% for i in "123" %}
-            <div class="progress-bar progress-bar-success" style="width:33.3%;{% if forloop.counter > progress.round %}opacity:0.15;{% elif forloop.counter < progress.round %}opacity:0.5;{% endif %}"></div>
-            {% endfor %}
+            <div class="progress-bar progress-bar-info" style="width:{% widthratio progress.cur_answered progress.total 100 %}%;"></div>
         </div>
     </div>
 
@@ -71,20 +68,17 @@ function selectAnswer(val) {
             question_id: {{ question.id }},
             question_type: 'choice',
             selected: val,
-            assignment_id: '{{ assignment_id|default:"" }}',
-            retry: retrying ? '1' : '0'
+            retry: retrying ? '1' : '0',
         },
         dataType: 'json',
         success: function(res) {
             if (res.retry) {
-                // 首次答错，提示重试
-                $('#result-box').addClass('wrong').html('<h4><i class="fa fa-lightbulb-o"></i> ' + res.msg + '</h4>').show();
+                $('#result-box').addClass('wrong').html('<h4><i class="fa fa-lightbulb-o"></i> ' + (res.msg || '好像回答错误，再思考一下吧') + '</h4>').show();
                 answered = false;
                 retrying = true;
                 $('.option-btn').prop('disabled', false).removeClass('selected');
                 setTimeout(function() { $('#result-box').fadeOut(); }, 1500);
             } else {
-                // 最终结果
                 $('.option-btn[data-value="' + res.right_answer + '"]').addClass('correct-answer');
                 var rb = $('#result-box');
                 if (res.correct) {
@@ -94,6 +88,9 @@ function selectAnswer(val) {
                     rb.addClass('wrong').html('<h4><i class="fa fa-times-circle"></i> 回答错误，正确答案是 <strong>' + res.right_answer.toUpperCase() + '</strong></h4>');
                 }
                 rb.show();
+                var nextUrl = '?';
+                if (res.done) nextUrl += 'done=' + res.done;
+                $('#next-btn a').attr('href', nextUrl);
                 $('#next-btn').show();
             }
         },
