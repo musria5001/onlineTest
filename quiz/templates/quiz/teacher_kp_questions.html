@@ -1,187 +1,41 @@
 {% extends 'base.html' %}
 {% block content %}
-<style>
-    .q-item { padding: 10px 15px; border-bottom: 1px solid #eee; }
-    .opt { display: inline-block; padding: 2px 8px; margin: 1px; border-radius: 3px; background: #f0f0f0; font-size: 12px; }
-    .opt.correct { background: #dff0d8; font-weight: bold; }
-    #addForm { background: #f9f9f9; padding: 20px; border-radius: 4px; margin-bottom: 15px; }
-    #addForm input, #addForm textarea { margin-bottom: 6px; }
-    .import-result { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; }
-    .import-result .item { padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; }
-    .import-result .item:hover { background: #f0f7ff; }
-    .import-result .item.selected { background: #d9edf7; }
-    .nav-tabs { margin-bottom: 20px; }
-</style>
-
 <a href="{% url 'quiz_teacher_kp_manage' %}" class="btn btn-default btn-sm">
     <i class="fa fa-arrow-left"></i> 返回知识点列表
 </a>
-<h4 class="mt-3">{{ kp2.name }} — 题目管理（选择{{ choice_questions.count }}题 / 填空{{ ducheng_questions.count }}题）</h4>
+<h4 class="mt-3">{{ kp2.name }} — 题目列表（选择{{ choice_questions.count }}题 / 填空{{ ducheng_questions.count }}题）</h4>
 
-<!-- Tabs: 新建 | 导入 -->
-<ul class="nav nav-tabs">
-    <li class="active"><a data-toggle="tab" href="#tab-new">新建题目</a></li>
-    <li><a data-toggle="tab" href="#tab-import">从题库导入</a></li>
-</ul>
-
-<div class="tab-content">
-    <!-- 新建题目 -->
-    <div id="tab-new" class="tab-pane fade in active">
-        <div id="addForm">
-            <div class="btn-group" style="margin-bottom:12px;">
-                <button class="btn btn-info btn-sm" onclick="switchType('choice')" id="btn-choice">选择题</button>
-                <button class="btn btn-default btn-sm" onclick="switchType('ducheng')" id="btn-ducheng">填空题</button>
-            </div>
-
-            <div id="form-choice">
-                <textarea class="form-control" id="q-title" rows="2" placeholder="题干"></textarea>
-                <div class="row">
-                    <div class="col-md-6">
-                        <input class="form-control" id="q-a" placeholder="选项 A">
-                        <input class="form-control" id="q-c" placeholder="选项 C">
-                    </div>
-                    <div class="col-md-6">
-                        <input class="form-control" id="q-b" placeholder="选项 B">
-                        <input class="form-control" id="q-d" placeholder="选项 D">
-                    </div>
-                </div>
-                <div style="margin-top:8px;">
-                    <select class="form-control" id="q-right" style="width:200px;display:inline;">
-                        <option value="">正确答案</option>
-                        <option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option>
-                    </select>
-                    <button class="btn btn-success" onclick="addQ('choice')">添加选择题</button>
-                </div>
-            </div>
-
-            <div id="form-ducheng" style="display:none;">
-                <textarea class="form-control" id="dq-title" rows="2" placeholder="题干（如：Python中输出函数是___）"></textarea>
-                <input class="form-control" id="dq-answer" placeholder="正确答案（多个用|||分隔，如：print|||printf）">
-                <button class="btn btn-success" style="margin-top:8px;" onclick="addQ('ducheng')">添加填空题</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 从题库导入 -->
-    <div id="tab-import" class="tab-pane fade">
-        <div style="margin-bottom:10px;">
-            <div class="row" style="margin-bottom:8px;">
-                <div class="col-md-3"><select class="form-control" id="import-course" onchange="impLoadKP1()"><option value="">全部课程</option>{% for c in all_courses %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>
-                <div class="col-md-3"><select class="form-control" id="import-kp1" onchange="impLoadKP2()"><option value="">全部一级知识点</option></select></div>
-                <div class="col-md-3"><select class="form-control" id="import-kp2"><option value="">全部二级知识点</option></select></div>
-            </div>
-            <div style="margin-bottom:8px;">
-                <select id="search-type" class="form-control" style="width:120px;display:inline;">
-                    <option value="choice">选择题</option>
-                    <option value="ducheng">填空题</option>
-                </select>
-                <input id="search-input" class="form-control" style="width:220px;display:inline;" placeholder="搜索关键词（可选）...">
-                <button class="btn btn-primary" onclick="searchQ()">搜索</button>
-                <button class="btn btn-success" onclick="importSelected()">导入选中</button>
-            </div>
-        </div>
-        <div id="import-results" class="import-result"></div>
-    </div>
-</div>
-
-<!-- 已有题目 -->
-<div class="row" style="margin-top:20px;">
+<div class="row" style="margin-top:15px;">
     <div class="col-md-6">
-        <div class="panel panel-default">
-            <div class="panel-heading"><strong>选择题</strong> ({{ choice_questions.count }} 题)</div>
-            <div class="panel-body" style="padding:0; max-height:500px; overflow-y:auto;">
+        <div class="panel panel-info">
+            <div class="panel-heading"><strong>选择题</strong></div>
+            <div class="panel-body" style="padding:0; max-height:600px; overflow-y:auto;">
                 {% for q in choice_questions %}
-                <div class="q-item">{{ forloop.counter }}. {{ q.title }}
-                    <span class="pull-right"><button class="btn btn-danger btn-xs" onclick="delQ({{ q.id }},'choice')">删</button></span>
+                <div style="padding:10px 15px; border-bottom:1px solid #eee;">
+                    <strong>{{ forloop.counter }}.</strong> {{ q.title }}
                     <div style="margin-top:4px;">
-                        <span class="opt{% if q.right_answer == 'a' %} correct{% endif %}">A</span>
-                        <span class="opt{% if q.right_answer == 'b' %} correct{% endif %}">B</span>
-                        <span class="opt{% if q.right_answer == 'c' %} correct{% endif %}">C</span>
-                        <span class="opt{% if q.right_answer == 'd' %} correct{% endif %}">D</span>
+                        <span style="margin-right:10px;{% if q.right_answer == 'a' %}color:#5cb85c;font-weight:bold{% endif %}">A. {{ q.a }}</span>
+                        <span style="margin-right:10px;{% if q.right_answer == 'b' %}color:#5cb85c;font-weight:bold{% endif %}">B. {{ q.b }}</span>
+                        <span style="margin-right:10px;{% if q.right_answer == 'c' %}color:#5cb85c;font-weight:bold{% endif %}">C. {{ q.c }}</span>
+                        <span style="{% if q.right_answer == 'd' %}color:#5cb85c;font-weight:bold{% endif %}">D. {{ q.d }}</span>
                     </div>
                 </div>
-                {% empty %}<div class="q-item text-muted">暂无选择题</div>{% endfor %}
+                {% empty %}<div style="padding:15px;" class="text-muted">暂无选择题</div>{% endfor %}
             </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="panel panel-default">
-            <div class="panel-heading"><strong>填空题</strong> ({{ ducheng_questions.count }} 题)</div>
-            <div class="panel-body" style="padding:0; max-height:500px; overflow-y:auto;">
+        <div class="panel panel-warning">
+            <div class="panel-heading"><strong>填空题</strong></div>
+            <div class="panel-body" style="padding:0; max-height:600px; overflow-y:auto;">
                 {% for q in ducheng_questions %}
-                <div class="q-item">{{ forloop.counter }}. {{ q.title }}
-                    <span class="pull-right"><button class="btn btn-danger btn-xs" onclick="delDucheng({{ q.ducheng_id }})">删</button></span>
-                    <br><small class="text-muted">答案: {{ q.answer|truncatechars:40 }}</small>
+                <div style="padding:10px 15px; border-bottom:1px solid #eee;">
+                    <strong>{{ forloop.counter }}.</strong> {{ q.title }}
+                    <br><small style="color:#5cb85c;">答案: {{ q.answer }}</small>
                 </div>
-                {% empty %}<div class="q-item text-muted">暂无填空题</div>{% endfor %}
+                {% empty %}<div style="padding:15px;" class="text-muted">暂无填空题</div>{% endfor %}
             </div>
         </div>
     </div>
 </div>
-
-<script>
-var curType = 'choice';
-
-// 级联下拉
-function impLoadKP1() {
-    var cid = $('#import-course').val();
-    $('#import-kp1').html('<option value="">全部一级知识点</option>');
-    $('#import-kp2').html('<option value="">全部二级知识点</option>');
-    if (!cid) return;
-    $.get('{% url "quiz_teacher_ajax_kp1s" %}', { course_id: cid }, function(data) {
-        for (var k in data) $('#import-kp1').append('<option value="'+k+'">'+data[k]+'</option>');
-    });
-}
-function impLoadKP2() {
-    var kid = $('#import-kp1').val();
-    $('#import-kp2').html('<option value="">全部二级知识点</option>');
-    if (!kid) return;
-    $.get('{% url "quiz_teacher_ajax_kp2s" %}', { kp1_id: kid }, function(data) {
-        for (var k in data) $('#import-kp2').append('<option value="'+k+'">'+data[k]+'</option>');
-    });
-}
-
-function switchType(t) {
-    curType = t;
-    $('#btn-choice').toggleClass('btn-info btn-default');
-    $('#btn-ducheng').toggleClass('btn-info btn-default');
-    $('#form-choice').toggle(t === 'choice');
-    $('#form-ducheng').toggle(t === 'ducheng');
-}
-function addQ(type) {
-    var data = { question_type: type, csrfmiddlewaretoken: '{{ csrf_token }}' };
-    if (type === 'choice') {
-        data.title = $('#q-title').val(); data.a = $('#q-a').val();
-        data.b = $('#q-b').val(); data.c = $('#q-c').val();
-        data.d = $('#q-d').val(); data.right = $('#q-right').val();
-    } else {
-        data.title = $('#dq-title').val(); data.answer = $('#dq-answer').val();
-    }
-    $.post('{% url "quiz_teacher_add_question" kp2.id %}', data, function(res) {
-        if (res.ok) location.reload(); else alert(res.msg);
-    });
-}
-var selected = {};
-function searchQ() {
-    $.get('{% url "quiz_teacher_search_questions" %}', {
-        q: $('#search-input').val(), type: $('#search-type').val(),
-        kp2_id: {{ kp2.id }}, filter_kp2: $('#import-kp2').val()
-    }, function(res) {
-        selected = {};
-        var html = '';
-        res.results.forEach(function(r) { html += '<div class="item" onclick="toggle(this,'+r.id+')" data-id="'+r.id+'"><b>#'+r.id+'</b> '+r.title+' <small class="text-muted">['+r.answer+']</small></div>'; });
-        $('#import-results').html(html || '<div class="text-muted">未找到</div>');
-    });
-}
-function toggle(el, id) { $(el).toggleClass('selected'); selected[id] = !selected[id]; }
-function importSelected() {
-    var ids = Object.keys(selected).filter(function(k){ return selected[k]; });
-    if (!ids.length) { alert('请先选中题目'); return; }
-    $.post('{% url "quiz_teacher_link_questions" kp2.id %}', { ids: ids.join(','), question_type: $('#search-type').val() }, function(res) {
-        if (res.ok) location.reload(); else alert(res.msg);
-    });
-}
-function delQ(id) { if(confirm('确定删除？')) $.post('/quiz/teacher/question/'+id+'/delete/?type=choice', function(r){ if(r.ok)location.reload(); }); }
-function delDucheng(id) { if(confirm('确定删除？')) $.post('/quiz/teacher/question/'+id+'/delete/?type=ducheng', function(r){ if(r.ok)location.reload(); }); }
-</script>
 {% endblock %}

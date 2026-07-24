@@ -106,7 +106,6 @@
                          </a>
                          <ul class="sub" id="extend_quiz_menu">
                              <li id="quiz_kp_tree"><a href="{% url 'quiz_kp_tree' %}">选择知识点</a></li>
-                             <li id="quiz_student_assignments"><a href="{% url 'quiz_student_assignments' %}">我的作业</a></li>
                              <li id="quiz_points"><a href="{% url 'quiz_points' %}">我的积分</a></li>
                              <li id="quiz_leaderboard"><a href="{% url 'quiz_leaderboard' %}">积分排行榜</a></li>
                          </ul>
@@ -162,9 +161,6 @@
                         </a>
                         <ul class="sub" id="extend_quiz_teacher_menu">
                             <li id="quiz_teacher_dashboard"><a href="{% url 'quiz_teacher_dashboard' %}">答题统计</a></li>
-                            <li id="quiz_teacher_assignment_create"><a href="{% url 'quiz_teacher_assignment_create' %}">布置作业</a></li>
-                            <li id="quiz_teacher_assignment_list"><a href="{% url 'quiz_teacher_assignment_list' %}">已布置作业</a></li>
-                            <li id="quiz_teacher_kp_manage"><a href="{% url 'quiz_teacher_kp_manage' %}">知识点管理</a></li>
                         </ul>
                     </li>
                     {% endif %}
@@ -406,27 +402,11 @@
                 $("#quiz_teacher_menu").addClass("active");
                 $("#extend_quiz_teacher_menu").css("display", "block");
                 break;
-            case 'quiz_teacher_assignment_create':
-                $("#quiz_teacher_assignment_create").addClass("active");
-                $("#quiz_teacher_menu").addClass("active");
-                $("#extend_quiz_teacher_menu").css("display", "block");
-                break;
-            case 'quiz_teacher_assignment_list':
-                $("#quiz_teacher_assignment_list").addClass("active");
-                $("#quiz_teacher_menu").addClass("active");
-                $("#extend_quiz_teacher_menu").css("display", "block");
-                break;
             case 'quiz_teacher_kp_manage':
                 $("#quiz_teacher_kp_manage").addClass("active");
                 $("#quiz_teacher_menu").addClass("active");
                 $("#extend_quiz_teacher_menu").css("display", "block");
                 break;
-            case 'quiz_student_assignments':
-                $("#quiz_student_assignments").addClass("active");
-                $("#quiz_menu").addClass("active");
-                $("#extend_quiz_menu").css("display", "block");
-                break;
-            case 'courser_manage':
                 $("#courser_manage").addClass('active');
                 $("#manage").addClass("active");
                 $("#extend_manage").css('display', 'block');
