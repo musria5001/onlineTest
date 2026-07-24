@@ -493,15 +493,16 @@ def teacher_student_records(request, banji_id, user_id):
 
     records = AnswerRecord.objects.filter(
         user=stu, banji=banji
-    ).select_related('question', 'kp2', 'kp2__upperPoint').order_by('-created_time')[:200]
+    ).select_related('choice_question', 'ducheng_question', 'kp2', 'kp2__upperPoint').order_by('-created_time')[:200]
 
     # 按知识点汇总
     kp2_summary = []
-    kp2_ids = records.values_list('kp2', flat=True).distinct()
+    kp2_ids = AnswerRecord.objects.filter(user=stu, banji=banji).values_list('kp2', flat=True).distinct()
+    base_qs = AnswerRecord.objects.filter(user=stu, banji=banji)
     for kp2_id in kp2_ids:
         kp2 = KnowledgePoint2.objects.get(pk=kp2_id)
-        correct = records.filter(kp2=kp2, is_correct=True).count()
-        total = records.filter(kp2=kp2).count()
+        correct = base_qs.filter(kp2=kp2, is_correct=True).count()
+        total = base_qs.filter(kp2=kp2).count()
         kp2_summary.append({
             'name': kp2.name,
             'kp1_name': kp2.upperPoint.name if kp2.upperPoint else '',
@@ -509,8 +510,8 @@ def teacher_student_records(request, banji_id, user_id):
             'total': total,
         })
 
-    tc = records.filter(is_correct=True).count()
-    tn = records.count()
+    tc = base_qs.filter(is_correct=True).count()
+    tn = base_qs.count()
 
     return render(request, 'quiz/teacher_student_records.html', {
         'title': '%s - 答题记录' % stu.username,

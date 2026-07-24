@@ -75,7 +75,7 @@
         <div class="{% if record.is_correct %}record-correct{% else %}record-wrong{% endif %}"
              style="padding: 12px 15px; border-bottom: 1px solid #eee;">
             <div>
-                <strong>{{ record.question.title }}</strong>
+                <strong>{% if record.question_type == 'choice' %}{{ record.choice_question.title }}{% else %}{{ record.ducheng_question.title }}{% endif %}</strong>
                 <small class="text-muted"> — {{ record.kp2.name }}</small>
                 <span class="pull-right">
                     {% if record.is_correct %}
@@ -86,20 +86,26 @@
                     <small class="text-muted">{{ record.created_time|date:"Y-m-d H:i" }}</small>
                 </span>
             </div>
+            {% if record.question_type == 'choice' %}
             <div style="margin-top: 5px;">
-                <span class="option-btn-sm {% if record.question.right_answer == 'a' %}correct{% elif record.question.right_answer != 'a' %}neutral{% endif %}">
-                    A. {{ record.question.a }}
+                <span class="option-btn-sm {% if record.choice_question.right_answer == 'a' %}correct{% else %}neutral{% endif %}">
+                    A. {{ record.choice_question.a }}
                 </span>
-                <span class="option-btn-sm {% if record.question.right_answer == 'b' %}correct{% elif record.question.right_answer != 'b' %}neutral{% endif %}">
-                    B. {{ record.question.b }}
+                <span class="option-btn-sm {% if record.choice_question.right_answer == 'b' %}correct{% else %}neutral{% endif %}">
+                    B. {{ record.choice_question.b }}
                 </span>
-                <span class="option-btn-sm {% if record.question.right_answer == 'c' %}correct{% elif record.question.right_answer != 'c' %}neutral{% endif %}">
-                    C. {{ record.question.c }}
+                <span class="option-btn-sm {% if record.choice_question.right_answer == 'c' %}correct{% else %}neutral{% endif %}">
+                    C. {{ record.choice_question.c }}
                 </span>
-                <span class="option-btn-sm {% if record.question.right_answer == 'd' %}correct{% elif record.question.right_answer != 'd' %}neutral{% endif %}">
-                    D. {{ record.question.d }}
+                <span class="option-btn-sm {% if record.choice_question.right_answer == 'd' %}correct{% else %}neutral{% endif %}">
+                    D. {{ record.choice_question.d }}
                 </span>
             </div>
+            {% else %}
+            <div style="margin-top:5px;">
+                <small class="text-muted">填空题，答案: {{ record.ducheng_question.answer }}</small>
+            </div>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
