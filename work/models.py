@@ -1,3 +1,5 @@
+import random
+
 from django.db import models
 import django
 from auth_system.models import MyUser
@@ -12,11 +14,24 @@ class BanJi(models.Model):
     teacher = models.ForeignKey(MyUser, null=True, related_name='banJi_teacher')
     students = models.ManyToManyField(MyUser, related_name='banJi_students')
     courser = models.ForeignKey('judge.ClassName', null=True)
+    join_code = models.CharField(max_length=4, unique=True, null=True, blank=True, verbose_name='班级码')
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     work_result = models.TextField(null=True, blank=True)
     score_weight = models.CharField(max_length=100,verbose_name='各项数据权重',default='{"pscore":1,"mscore":0,"sign":0}')
     update_time = models.DateTimeField(default=django.utils.timezone.now)
+
+    @classmethod
+    def make_join_code(cls):
+        while True:
+            code = '%04d' % random.randint(1000, 9999)
+            if not cls.objects.filter(join_code=code).exists():
+                return code
+
+    def save(self, *args, **kwargs):
+        if not self.join_code:
+            self.join_code = self.make_join_code()
+        super(BanJi, self).save(*args, **kwargs)
 
     def __str__(self):
         return str(self.name)

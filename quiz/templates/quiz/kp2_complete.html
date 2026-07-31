@@ -6,7 +6,12 @@
 </style>
 <div class="complete-box">
     <i class="fa fa-check-circle"></i>
-    <h3>恭喜！本知识点全部答完</h3>
+    <h3>恭喜，本知识点已全部完成</h3>
+    {% if next_url %}
+    <a href="{% url next_url kp2.id %}" class="btn btn-primary btn-lg" style="margin-right:10px;">
+        继续答题
+    </a>
+    {% endif %}
     <a href="{% url 'quiz_kp_tree' %}" class="btn btn-primary btn-lg">
         <i class="fa fa-reply"></i> 返回知识点列表
     </a>

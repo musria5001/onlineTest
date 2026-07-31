@@ -1,17 +1,18 @@
 import pymysql
 pymysql.install_as_MySQLdb()
 
-from .settings import USER_FILE_DIR
+from .settings import USER_FILE_DIR, LOG_DIR
 import os
-if not os.path.exists(USER_FILE_DIR):
-    os.mkdir(USER_FILE_DIR)
-if not os.path.exists(os.path.join(USER_FILE_DIR, "allCode")):
-    os.mkdir(os.path.join(USER_FILE_DIR, "allCode"))
-if not os.path.exists(os.path.join(USER_FILE_DIR,"codeWeekTarFiles")):
-    os.mkdir(os.path.join(USER_FILE_DIR,"codeWeekTarFiles"))
-if not os.path.exists(os.path.join(USER_FILE_DIR,"codeZip")):
-    os.mkdir(os.path.join(USER_FILE_DIR,"codeZip"))
-if not os.path.exists(os.path.join(USER_FILE_DIR,"reportFile")):
-    os.mkdir(os.path.join(USER_FILE_DIR,"reportFile"))
-if not os.path.exists(os.path.join(USER_FILE_DIR,"upload")):
-    os.mkdir(os.path.join(USER_FILE_DIR,"upload"))
+
+def _ensure_dir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
+_ensure_dir(USER_FILE_DIR)
+_ensure_dir(os.path.join(USER_FILE_DIR, "allCode"))
+_ensure_dir(os.path.join(USER_FILE_DIR, "codeWeekTarFiles"))
+_ensure_dir(os.path.join(USER_FILE_DIR, "codeZip"))
+_ensure_dir(os.path.join(USER_FILE_DIR, "reportFile"))
+_ensure_dir(os.path.join(USER_FILE_DIR, "upload"))
+_ensure_dir(LOG_DIR)

@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% block content %}
-
 <style>
 .stat-panel .panel-heading { padding: 12px 15px; position: relative; min-height: 70px; }
 .stat-panel .stat-label { display: inline-block; margin-left: 8px; font-size: 16px; vertical-align: middle; }
@@ -27,7 +26,7 @@
     <div class="col-md-3">
         <div class="panel panel-success stat-panel">
             <div class="panel-heading">
-                <i class="fa fa-check-circle stat-icon"></i><span class="stat-label">总正确数</span>
+                <i class="fa fa-check-circle stat-icon"></i><span class="stat-label">正确数</span>
                 <span class="stat-num">{{ total_correct }}</span>
             </div>
         </div>
@@ -35,7 +34,7 @@
     <div class="col-md-3">
         <div class="panel panel-warning stat-panel">
             <div class="panel-heading">
-                <i class="fa fa-trophy stat-icon"></i><span class="stat-label">总正确率</span>
+                <i class="fa fa-trophy stat-icon"></i><span class="stat-label">正确率</span>
                 <span class="stat-num">{{ accuracy }}%</span>
             </div>
         </div>
@@ -75,6 +74,6 @@
     </div>
 </div>
 {% else %}
-<div class="alert alert-info">还没有答题记录，去<a href="{% url 'quiz_kp_tree' %}">选择知识点</a>开始练习吧！</div>
+<div class="alert alert-info">还没有答题记录，去 <a href="{% url 'quiz_kp_tree' %}">选择知识点</a> 开始练习吧。</div>
 {% endif %}
 {% endblock %}

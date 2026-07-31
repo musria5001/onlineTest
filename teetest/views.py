@@ -1,14 +1,14 @@
 # coding:utf-8
 import json
 
-from django.shortcuts import render_to_response, RequestContext
+from django.shortcuts import render
 from django.http import HttpResponse
 from .geetest import GeetestLib
 
 
 #请在官网申请ID使用，示例ID不可使用
 pc_geetest_od = "30c13bf1ac5ae837ccd1c438c6676ef7"
-#pc_geetest_id = "b46d1900d0a894591916ea94ea91bd2c"
+pc_geetest_id = pc_geetest_od
 pc_geetest_key = "b2d9307bfaf6f721624d35482aaf3765"
 #pc_geetest_key = "36fc3fe98530eea08dfc6ce76e3d24c4"
 mobile_geetest_id = "30c13bf1ac5ae837ccd1c438c6676ef7"
@@ -19,7 +19,7 @@ mobile_geetest_key = "b2d9307bfaf6f721624d35482aaf3765"
 
 
 def home(request):
-    return render_to_response("index.html", context_instance=RequestContext(request))
+    return render(request, "index.html")
 
 
 def pcgetcaptcha(request):

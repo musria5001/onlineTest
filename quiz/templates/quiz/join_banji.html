@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading"><strong>加入班级</strong></div>
+            <div class="panel-body">
+                {% if message %}
+                    <div class="alert alert-success">{{ message }}</div>
+                {% endif %}
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="banji_code">4 位班级码</label>
+                        <input class="form-control" id="banji_code" name="banji_code" maxlength="4" pattern="[0-9]{4}" placeholder="请输入老师提供的 4 位班级码" required>
+                    </div>
+                    <button class="btn btn-primary" type="submit">加入班级</button>
+                    <a class="btn btn-default" href="{% url 'quiz_kp_tree' %}">去做题</a>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="panel panel-info">
+            <div class="panel-heading"><strong>我的班级</strong></div>
+            <div class="panel-body">
+                {% if banjis %}
+                    <table class="table table-striped">
+                        <thead>
+                        <tr><th>班级</th><th>课程</th><th>老师</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for banji in banjis %}
+                            <tr>
+                                <td>{{ banji.name }}</td>
+                                <td>{{ banji.courser.name }}</td>
+                                <td>{{ banji.teacher.username }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="alert alert-warning">你还没有加入班级。加入班级后才能做课程题目。</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -24,13 +24,15 @@ def teacher_index(request):
     if request.method == 'GET' and user.isTeacher():
         all_student_count = {}
 
-        cursor = connection.cursor()
-        classesSql = 'select id, name\
-            from work_banji \
-            where teacher_id = %d ' % user.id \
-            + 'and now() between date_sub(start_time,interval 10 day) and end_time'
-        cursor.execute(classesSql)
-        classes = list(map(lambda x: dict(zip(['banjiId', 'name'], x)), cursor.fetchall()))[::-1]
+        time_now = datetime.now()
+        classes = [
+            {'banjiId': banji.id, 'name': banji.name}
+            for banji in BanJi.objects.filter(
+                teacher=user,
+                start_time__lte=time_now + timedelta(days=10),
+                end_time__gte=time_now,
+            ).order_by('-id')
+        ]
         for banji in classes:
             all_student_count[banji['banjiId']] = BanJi.objects.get(id = banji['banjiId']).students.count()-1
         
@@ -129,25 +131,21 @@ def detail(request, eventId):
 @login_required()
 def student_index(request):
     userId = request.user.id
-    # print(userId)
-    cursor = connection.cursor()
-
-    ongoingSQL = '\
-        select e.id, tmp.name, e.position, e.started_time, e.closed_time\
-        from sign_event AS e\
-        join \
-        (\
-            select distinct bj_mid.banji_id, bj.name\
-            from work_banji_students AS bj_mid\
-            join work_banji AS bj\
-            on bj_mid.banji_id = bj.id and bj_mid.myuser_id = %d\
-        ) AS tmp\
-        on e.banji_id = tmp.banji_id\
-        where now() between e.started_time and e.closed_time\
-    ' % userId
-    cursor.execute(ongoingSQL)
-    # print(ongoingSQL)
-    onGoing = list(map(lambda x: dict(zip(['id', 'name', 'position', 'startTime', 'closedTime'], x)), cursor.fetchall()))
+    time_now = datetime.now()
+    onGoing = [
+        {
+            'id': event.id,
+            'name': event.banji.name,
+            'position': event.position,
+            'startTime': event.started_time,
+            'closedTime': event.closed_time,
+        }
+        for event in Event.objects.filter(
+            banji__students=request.user,
+            started_time__lte=time_now,
+            closed_time__gte=time_now,
+        ).select_related('banji').order_by('started_time')
+    ]
     onGoing = onGoing[0] if onGoing else []
 
     '''

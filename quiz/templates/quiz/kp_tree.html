@@ -1,23 +1,23 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
-    .course-card { border: 2px solid #337ab7; border-radius: 10px; padding: 20px; margin-bottom: 30px; background: #fff; }
+    .course-card { border: 2px solid #337ab7; border-radius: 8px; padding: 20px; margin-bottom: 30px; background: #fff; }
     .course-card h3 { margin: 0 0 18px 0; color: #337ab7; }
     .kp2-shelf { display: flex; align-items: flex-start; flex-wrap: wrap; }
     .kp1-divider { width: 100%; display: flex; align-items: center; margin: 10px 0 8px 0; }
     .kp1-divider:first-child { margin-top: 0; }
-    .kp1-tag { display: inline-block; padding: 6px 14px; background: #337ab7; color: #fff; border-radius: 20px; font-size: 13px; white-space: nowrap; flex-shrink: 0; }
-    .kp1-tag .kp1-idx { font-size: 11px; opacity: 0.7; margin-right: 4px; }
+    .kp1-tag { display: inline-block; padding: 6px 14px; background: #337ab7; color: #fff; border-radius: 16px; font-size: 13px; white-space: nowrap; flex-shrink: 0; }
+    .kp1-tag .kp1-idx { font-size: 11px; opacity: 0.8; margin-right: 4px; }
     .kp1-line { flex: 1; height: 2px; background: #d0d0d0; margin-left: 12px; }
-    .kp2-card { width: 175px; margin: 6px 8px 6px 0; padding: 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: #fff; flex-shrink: 0; transition: all 0.15s; }
+    .kp2-card { width: 180px; margin: 6px 8px 6px 0; padding: 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: #fff; flex-shrink: 0; transition: all 0.15s; }
     .kp2-card:hover { border-color: #337ab7; background: #e8f4ff; transform: translateY(-1px); }
     .kp2-card.complete { border-color: #5cb85c; background: #f0fff0; }
     .kp2-card.locked { border-color: #e0e0e0; background: #f5f5f5; opacity: 0.6; cursor: not-allowed; }
     .kp2-card.locked:hover { border-color: #e0e0e0; background: #f5f5f5; transform: none; }
-    .kp2-card h6 { margin: 0 0 5px 0; font-size: 13px; }
+    .kp2-card h6 { margin: 0 0 5px 0; font-size: 13px; line-height: 1.4; }
     .kp2-card .stats { font-size: 11px; color: #666; }
     .kp2-card .progress { margin: 5px 0 0 0; height: 5px; }
-    .kp2-arrow { display: inline-flex; align-items: center; color: #ccc; font-size: 16px; margin-right: 8px; padding-top: 8px; }
+    .kp2-arrow { display: inline-flex; align-items: center; color: #aaa; font-size: 16px; margin-right: 8px; padding-top: 8px; }
     .kp2-arrow.locked-arrow { color: #ddd; }
 </style>
 
@@ -28,12 +28,10 @@
     <div class="kp2-shelf">
         {% for kp1 in course.kp1s %}
             {% if not kp1.hidden %}
-                <!-- 章节标注行 -->
                 <div class="kp1-divider">
-                    <span class="kp1-tag"><span class="kp1-idx">第{{ kp1.index }}章</span> {{ kp1.name }}</span>
+                    <span class="kp1-tag"><span class="kp1-idx">第 {{ kp1.index }} 章</span> {{ kp1.name }}</span>
                     <span class="kp1-line"></span>
                 </div>
-                <!-- 该章节下的知识点方块 -->
                 {% for kp2 in kp1.kp2s %}
                     <span class="kp2-arrow {% if kp2.locked %}locked-arrow{% endif %}">→</span>
                     <div class="kp2-card {% if kp2.complete %}complete{% endif %} {% if kp2.locked %}locked{% endif %}"
@@ -43,7 +41,7 @@
                             {% if kp2.locked %}<i class="fa fa-lock" style="color:#ccc;"></i>{% endif %}
                             {{ kp2.name }}
                         </h6>
-                        <div class="stats">{{ kp2.correct }}分</div>
+                        <div class="stats">已得 {{ kp2.correct }} 分</div>
                         {% if kp2.total > 0 %}
                         <div class="progress" style="height:8px;display:flex;gap:2px;">
                             {% for i in "123" %}
@@ -60,6 +58,6 @@
 {% endfor %}
 
 {% if not course_data %}
-<div class="alert alert-info">暂无课程数据，请先由管理员添加课程和知识点。</div>
+<div class="alert alert-info">暂无课程数据。请先加入班级，或联系管理员添加课程、知识点和题目。</div>
 {% endif %}
 {% endblock %}

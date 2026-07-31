@@ -894,7 +894,7 @@ def add_banji(request):
         return redirect(reverse('banji_detail', args=(banji.id,)))
     return render(request, 'banji_add.html', context={'classnames': ClassName.objects.all(), 'title': "新建班级"})
 
-@permission_required('is_superuser')
+@permission_required('judge.add_classname')
 def add_courser(request):
     """
     新建课程
@@ -1141,7 +1141,7 @@ def show_banji(request, pk):
     #            creator=student).score if student in homework.finished_students.all() else "无")
     #    info['scores'] = scores
     #    students_scores.append(info)
-    context = {'id': banji.id, 'name': banji.name, 'courser': banji.courser.name, 'start_time': banji.start_time,
+    context = {'id': banji.id, 'join_code': banji.join_code, 'name': banji.name, 'courser': banji.courser.name, 'start_time': banji.start_time,
                'end_time': banji.end_time, 'teacher': banji.teacher.username,
                'title': '班级"' + banji.name + '"的信息', 'scores': students_scores}
     return render(request, 'banji_detail.html', context=context)
@@ -1383,6 +1383,8 @@ def unassign_homework(request):
 # 显示我的待做作业
 @login_required()
 def list_do_homework(request):
+    if request.user.is_content_admin:
+        raise Http404()
     banjis = BanJi.objects.filter(students=request.user).all()[::-1]
     return render(request, 'do_homework_list.html',
                   context={'banjis': banjis, 'title': '我的作业列表', 'position': 'unfinished'})
@@ -1390,6 +1392,8 @@ def list_do_homework(request):
 # 获取待做作业列表
 @login_required()
 def get_my_homework_todo(request):
+    if request.user.is_content_admin:
+        raise Http404()
     if {'offset','limit','banji','order'} - set(request.GET.dict()) != set():
         raise Http404()
     log = "执行动作：读取作业列表，用户信息：{}({}:{})，POST数据：{}".format(request.user.username,request.user.pk,request.user.id_num,request.POST.dict())
@@ -1574,6 +1578,8 @@ def get_gaicuo_score(homework_answer, judged_score=0):
 
 @login_required()
 def list_finished_homework(request):
+    if request.user.is_content_admin:
+        raise Http404()
     if not request.user.isTeacher() and not request.user.is_admin:
         raise Http404()
     banjis = BanJi.objects.filter(students=request.user).all()[::-1]
@@ -1761,6 +1767,8 @@ def student_score(request):
     """
     学生成绩数据
     """
+    if request.user.is_content_admin:
+        raise Http404()
     banjis = BanJi.objects.filter(students=request.user).all()[::-1]
     lst = []
     for banji in banjis:
@@ -1860,24 +1868,24 @@ def list_coursers(request):
     """
     列出课程
     """
-    if not request.user.is_admin:
+    if not request.user.is_content_admin:
         raise PermissionDenied 
     coursers = ClassName.objects.all()
     return render(request, 'courser_list.html', {'coursers': coursers, 'title': '课程列表', 'position': 'courser_manage'})
 
-@permission_required('is_superuser')
+@permission_required('judge.add_knowledgepoint1')
 def list_kp1s(request, id):
     courser = get_object_or_404(ClassName, id=id)
     kp1s = KnowledgePoint1.objects.filter(classname=courser)
     return render(request, 'kp1_list.html', {'kp1s': kp1s, 'title': '查看课程“%s”的一级知识点' % courser.name, 'id': id})
 
-@permission_required('is_superuser')
+@permission_required('judge.add_knowledgepoint2')
 def list_kp2s(request, id):
     kp1 = get_object_or_404(KnowledgePoint1, id=id)
     kp2s = KnowledgePoint2.objects.filter(upperPoint=kp1)
     return render(request, 'kp2s_list.html', context={'kp2s': kp2s, 'id': id, 'title': '查看一级知识点"%s”下的二级知识点' % kp1.name})
 
-@permission_required('is_superuser')
+@permission_required('judge.delete_classname')
 def delete_courser(request):
     try:
         ClassName.objects.get(id=request.POST['id']).delete()
@@ -1885,7 +1893,7 @@ def delete_courser(request):
     except:
         raise Http404()
 
-@permission_required('is_superuser')
+@permission_required('judge.delete_knowledgepoint1')
 def delete_kp1(request):
     try:
         KnowledgePoint1.objects.get(id=request.POST['id']).delete()
@@ -1893,7 +1901,7 @@ def delete_kp1(request):
     except:
         raise Http404()
 
-@permission_required('is_superuser')
+@permission_required('judge.delete_knowledgepoint2')
 def delete_kp2(request):
     try:
         KnowledgePoint2.objects.get(id=request.POST['id']).delete()
@@ -1901,7 +1909,7 @@ def delete_kp2(request):
     except:
         raise Http404()
 
-@permission_required('is_superuser')
+@permission_required('judge.add_knowledgepoint1')
 def add_kp1(request):
     if 'name' in request.POST.dict():
         kp1 = KnowledgePoint1(name=request.POST['name'], classname_id=request.POST['id'])
@@ -1910,7 +1918,7 @@ def add_kp1(request):
     else:
         raise Http404()
 
-@permission_required('is_superuser')
+@permission_required('judge.add_knowledgepoint2')
 def add_kp2(request):
     if 'name' in request.POST.dict() and 'id' in request.POST.dict():
         kp2 = KnowledgePoint2(name=request.POST['name'], upperPoint_id=request.POST['id'])

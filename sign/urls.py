@@ -1,8 +1,9 @@
 from django.conf.urls import url
+from django.views.generic import RedirectView
 from . import views
 
 urlpatterns = [
-    url(r'^teacher_sign$', views.teacher_index, name='sign.teacher.index'),
+    url(r'^teacher_sign$', RedirectView.as_view(url='/quiz/teacher/', permanent=False), name='sign.teacher.index'),
     url(r'^create$', views.create, name='sign.create'),
     url(r'^detail/(\d+)$', views.detail, name='sign.detail'),
     url(r'^delete/(\d+)$', views.delete, name='sign.delete'),    
@@ -10,7 +11,7 @@ urlpatterns = [
     url(r'^accept/(\d+)$', views.accept, name='sign.accept'),
     url(r'^decline/(\d+)$', views.decline, name='sign.decline'),  
 
-    url(r'^student_sign$', views.student_index, name='sign.student.index'),
+    url(r'^student_sign$', RedirectView.as_view(url='/quiz/', permanent=False), name='sign.student.index'),
     url(r'^checkout/(\d+)$', views.checkout, name='sign.checkout'),
     url(r'^leave/(\d+)$', views.leave, name='sign.leave'),
     url(r'^get_sign_list/(\d+)$', views.get_sign_list, name='sign.get_sign_list'),

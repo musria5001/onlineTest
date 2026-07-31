@@ -30,18 +30,10 @@
     </div>
 
     <div id="options-area">
-        <button class="btn btn-default option-btn" data-value="a" onclick="selectAnswer('a')">
-            <strong>A.</strong> {{ question.a }}
-        </button>
-        <button class="btn btn-default option-btn" data-value="b" onclick="selectAnswer('b')">
-            <strong>B.</strong> {{ question.b }}
-        </button>
-        <button class="btn btn-default option-btn" data-value="c" onclick="selectAnswer('c')">
-            <strong>C.</strong> {{ question.c }}
-        </button>
-        <button class="btn btn-default option-btn" data-value="d" onclick="selectAnswer('d')">
-            <strong>D.</strong> {{ question.d }}
-        </button>
+        <button class="btn btn-default option-btn" data-value="a" onclick="selectAnswer('a')"><strong>A.</strong> {{ question.a }}</button>
+        <button class="btn btn-default option-btn" data-value="b" onclick="selectAnswer('b')"><strong>B.</strong> {{ question.b }}</button>
+        <button class="btn btn-default option-btn" data-value="c" onclick="selectAnswer('c')"><strong>C.</strong> {{ question.c }}</button>
+        <button class="btn btn-default option-btn" data-value="d" onclick="selectAnswer('d')"><strong>D.</strong> {{ question.d }}</button>
     </div>
 
     <div id="result-box" class="result-box"></div>
@@ -53,7 +45,6 @@
 
 <script>
 var answered = false;
-var retrying = false;
 
 function selectAnswer(val) {
     if (answered) return;
@@ -68,35 +59,30 @@ function selectAnswer(val) {
             question_id: {{ question.id }},
             question_type: 'choice',
             selected: val,
-            retry: retrying ? '1' : '0',
         },
         dataType: 'json',
         success: function(res) {
-            if (res.retry) {
-                $('#result-box').addClass('wrong').html('<h4><i class="fa fa-lightbulb-o"></i> ' + (res.msg || '好像回答错误，再思考一下吧') + '</h4>').show();
-                answered = false;
-                retrying = true;
-                $('.option-btn').prop('disabled', false).removeClass('selected');
-                setTimeout(function() { $('#result-box').fadeOut(); }, 1500);
+            $('.option-btn[data-value="' + res.right_answer + '"]').addClass('correct-answer');
+            var rb = $('#result-box');
+            if (res.correct) {
+                rb.removeClass('wrong').addClass('correct').html('<h4><i class="fa fa-check-circle"></i> 回答正确，+1 分</h4>');
             } else {
-                $('.option-btn[data-value="' + res.right_answer + '"]').addClass('correct-answer');
-                var rb = $('#result-box');
-                if (res.correct) {
-                    rb.addClass('correct').html('<h4><i class="fa fa-check-circle"></i> 回答正确！+1分</h4>');
-                } else {
-                    $('.option-btn[data-value="' + val + '"]').addClass('wrong-answer');
-                    rb.addClass('wrong').html('<h4><i class="fa fa-times-circle"></i> 回答错误，正确答案是 <strong>' + res.right_answer.toUpperCase() + '</strong></h4>');
-                }
-                rb.show();
-                var nextUrl = '?';
-                if (res.done) nextUrl += 'done=' + res.done;
-                $('#next-btn a').attr('href', nextUrl);
-                $('#next-btn').show();
+                $('.option-btn[data-value="' + val + '"]').addClass('wrong-answer');
+                rb.removeClass('correct').addClass('wrong').html('<h4><i class="fa fa-times-circle"></i> 回答错误，正确答案是 <strong>' + res.right_answer.toUpperCase() + '</strong></h4>');
             }
+            rb.show();
+            var nextUrl = '?';
+            if (res.done) nextUrl += 'done=' + res.done;
+            $('#next-btn a').attr('href', nextUrl);
+            $('#next-btn').show();
+            setTimeout(function() {
+                window.location.href = nextUrl;
+            }, 1200);
         },
         error: function() {
             answered = false;
             $('.option-btn').prop('disabled', false).removeClass('selected');
+            $('#result-box').removeClass('correct').addClass('wrong').html('<h4>提交失败，请稍后再试。</h4>').show();
         }
     });
 }

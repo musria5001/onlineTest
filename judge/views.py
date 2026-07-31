@@ -30,6 +30,17 @@ BUFSIZE = 4096
 BOMLEN = len(codecs.BOM_UTF8)
 
 
+def _can_manage_question_data(user):
+    if not user.is_authenticated():
+        return False
+    return (
+        user.isTeacher()
+        or user.is_content_admin
+        or user.has_perm('judge.add_problem')
+        or user.has_perm('judge.add_choiceproblem')
+    )
+
+
 # 添加选择题
 @permission_required('judge.add_choiceproblem')
 def add_choice(request):
@@ -131,7 +142,7 @@ def del_choice_problem(request):
         try:
             for pk in ids:
                 problem = ChoiceProblem.objects.get(pk=pk)
-                if request.user.is_admin or request.user == problem.creater:
+                if request.user.is_content_admin or request.user == problem.creater:
                     ChoiceProblem.objects.filter(pk=pk).delete()
         except:
             return HttpResponse(0)
@@ -147,7 +158,7 @@ def del_ducheng_problem(request):
         try:
             for pk in ids:
                 problem = DuchengProblem.objects.get(pk=pk)
-                if request.user.is_admin or request.user == problem.creater:
+                if request.user.is_content_admin or request.user == problem.creater:
                     DuchengProblem.objects.filter(pk=pk).delete()
                 else:
                     return HttpResponse(2)
@@ -216,7 +227,7 @@ class ProblemDetailView(DetailView):
     context_object_name = 'problem'
 
     def get_context_data(self, **kwargs):
-        if (not self.request.user.is_authenticated()) or (not self.request.user.isTeacher()):
+        if not _can_manage_question_data(self.request.user):
             raise Http404()
         context = super(ProblemDetailView, self).get_context_data(**kwargs)
         str = ''
@@ -235,7 +246,7 @@ class GaicuoProblemDetailView(DetailView):
     context_object_name = 'problem'
 
     def get_context_data(self, **kwargs):
-        if (not self.request.user.is_authenticated()) or (not self.request.user.isTeacher()):
+        if not _can_manage_question_data(self.request.user):
             raise Http404()
         context = super(GaicuoProblemDetailView, self).get_context_data(**kwargs)
         str = ''
@@ -252,7 +263,7 @@ class DuchengProblemDetailView(DetailView):
     context_object_name = 'problem'
 
     def get_context_data(self, **kwargs):
-        if (not self.request.user.is_authenticated()) or (not self.request.user.isTeacher()):
+        if not _can_manage_question_data(self.request.user):
             raise Http404()
         context = super(DuchengProblemDetailView, self).get_context_data(**kwargs)
         str = ''
@@ -271,7 +282,7 @@ class TiankongProblemDetailView(DetailView):
     context_object_name = 'problem'
 
     def get_context_data(self, **kwargs):
-        if (not self.request.user.is_authenticated()) or (not self.request.user.isTeacher()):
+        if not _can_manage_question_data(self.request.user):
             raise Http404()
         context = super( TiankongProblemDetailView, self).get_context_data(**kwargs)
         str = ''
@@ -288,7 +299,7 @@ class ChoiceProblemDetailView(DetailView):
     context_object_name = 'problem'
 
     def get_context_data(self, **kwargs):
-        if (not self.request.user.is_authenticated()) or (not self.request.user.isTeacher()):
+        if not _can_manage_question_data(self.request.user):
             raise Http404()
         context = super(ChoiceProblemDetailView, self).get_context_data(**kwargs)
         str = ''
@@ -304,7 +315,7 @@ class ChoiceProblemDetailView(DetailView):
 @permission_required('judge.change_problem')
 def update_problem(request, id):
     problem = get_object_or_404(Problem, pk=id)
-    if request.user != problem.creater and not request.user.is_admin:
+    if request.user != problem.creater and not request.user.is_content_admin:
         raise PermissionDenied
     json_dic = {}  # 知识点选择的需要的初始化数据
     for point in problem.knowledgePoint2.all():
@@ -347,7 +358,7 @@ def update_problem(request, id):
 @permission_required('judge.change_choiceproblem')
 def update_choice_problem(request,id):
     problem = get_object_or_404(ChoiceProblem, pk=int(id))
-    if request.user != problem.creater and not request.user.is_admin:
+    if request.user != problem.creater and not request.user.is_content_admin:
         raise PermissionDenied
     json_dic = {}  # 知识点选择的需要的初始化数据
     for point in problem.knowledgePoint2.all():
@@ -372,7 +383,7 @@ def update_choice_problem(request,id):
 @permission_required('judge.change_problem')
 def update_gaicuo(request, id):
     problem = get_object_or_404(Problem, pk=id)
-    if request.user != problem.creater and not request.user.is_admin:
+    if request.user != problem.creater and not request.user.is_content_admin:
         raise PermissionDenied
     json_dic = {}  # 知识点选择的需要的初始化数据
     for point in problem.knowledgePoint2.all():
@@ -415,7 +426,7 @@ def update_gaicuo(request, id):
 @permission_required('judge.change_problem')
 def update_ducheng(request, id='0'):
     problem = get_object_or_404(DuchengProblem, pk=id)
-    if request.user != problem.creater and not request.user.is_admin:
+    if request.user != problem.creater and not request.user.is_content_admin:
         raise  PermissionDenied
     json_dic = {}  # 知识点选择的需要的初始化数据
     for point in problem.knowledgePoint2.all():
@@ -437,7 +448,7 @@ def update_ducheng(request, id='0'):
 @permission_required('judge.change_problem')
 def update_tiankong(request, id):
     problem = get_object_or_404(Problem, pk=id)
-    if request.user != problem.creater and not request.user.is_admin:
+    if request.user != problem.creater and not request.user.is_content_admin:
         raise PermissionDenied
     json_dic = {}  # 知识点选择的需要的初始化数据
     for point in problem.knowledgePoint2.all():
@@ -508,7 +519,7 @@ def list_gaicuo(request):
     return render(request, 'gaicuo_problem_list.html', context={'classnames': classnames, 'title': '程序改错题题库', 'position': 'gaicuo_list'})
 
 # 返回含有问题数据的json
-@permission_required('work.add_homework')
+@permission_required('judge.add_problem')
 def get_json(request, model_name):
     if {'offset','limit','knowledgePoint2','classname','knowledgePoint1'} - set(request.GET.dict()) != set():
         raise Http404()
@@ -576,7 +587,7 @@ def get_json(request, model_name):
         recode = {'title': title, 'pk': problem.pk,
                   'update_date': problem.update_date.strftime('%Y-%m-%d %H:%M:%S'), 'id': problem.pk,
                   'knowledge_point': knowledge_point, 'testcases': testCases, 'total_score': total_score,
-		  'creator': problem.creater.username, 'isMine': request.user.is_admin or request.user==problem.creater,
+		  'creator': problem.creater.username, 'isMine': request.user.is_content_admin or request.user==problem.creater,
 }
         recodes.append(recode)
     json_data['rows'] = recodes

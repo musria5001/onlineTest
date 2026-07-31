@@ -16,16 +16,17 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-USER_FILE_DIR = "/home/judge/user_file/"
+USER_FILE_DIR = os.environ.get("ONLINETEST_USER_FILE_DIR", os.path.join(BASE_DIR, "user_file"))
+LOG_DIR = os.environ.get("ONLINETEST_LOG_DIR", os.path.join(BASE_DIR, "logs"))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'NJUPTC'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-only-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.environ.get("ONLINETEST_DEBUG", "1") != "0"
 
 SITE_NAME = "程序设计类课程教辅平台"
 CONTACT_INFO = "薛景老师（QQ群：230689474）"
@@ -64,10 +65,10 @@ INSTALLED_APPS = [
 ]
 
 CRONJOBS = [
-    ('00 20 * * 7', 'warning.m.warning', '>> /home/judge/log/warning.log'),
-    ('00 * * * *', 'warning.rejudge.part1', '>> /home/judge/log/warning.log'),
-    ('59 15 * * *', 'warning.m.getUpdateQuestion', '>> /home/judge/log/warning.log'),
-    ('55 15 * * *', 'census.views.Record', '>> /home/judge/log/census.log'),
+    ('00 20 * * 7', 'warning.m.warning', '>> ' + os.path.join(LOG_DIR, 'warning.log')),
+    ('00 * * * *', 'warning.rejudge.part1', '>> ' + os.path.join(LOG_DIR, 'warning.log')),
+    ('59 15 * * *', 'warning.m.getUpdateQuestion', '>> ' + os.path.join(LOG_DIR, 'warning.log')),
+    ('55 15 * * *', 'census.views.Record', '>> ' + os.path.join(LOG_DIR, 'census.log')),
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -109,21 +110,31 @@ WSGI_APPLICATION = 'onlineTest.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'jol',
-        'USER': 'root',
-        'PASSWORD': 'yfysgdsb2b',
-        'HOST': '',
-        'PORT': '',
+USE_SQLITE = os.environ.get("ONLINETEST_USE_SQLITE", "1") != "0"
+LOCAL_DEV = os.environ.get("ONLINETEST_LOCAL_DEV", "1") != "0"
+if USE_SQLITE:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.environ.get('MYSQL_DATABASE', 'jol'),
+            'USER': os.environ.get('MYSQL_USER', 'root'),
+            'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
+            'HOST': os.environ.get('MYSQL_HOST', ''),
+            'PORT': os.environ.get('MYSQL_PORT', ''),
+        }
+    }
 
 # OAuth设置
-QQ_APP_ID = '1106632115'
-QQ_KEY = 'UJNlQXGR6XZNUR8q'
-QQ_RECALL_URL = 'http://c.njupt.edu.cn/qqlogin/oauth/qq/check'
+QQ_APP_ID = os.environ.get('QQ_APP_ID', '')
+QQ_KEY = os.environ.get('QQ_KEY', '')
+QQ_RECALL_URL = os.environ.get('QQ_RECALL_URL', 'http://localhost/qqlogin/oauth/qq/check')
 
 AUTH_USER_MODEL = 'auth_system.MyUser'
 # Password validation
@@ -158,14 +169,14 @@ USE_I18N = True
 USE_L10N = True
 
 # email配置#########################################
-EMAIL_HOST = 'smtp.163.com'  # SMTP地址
-EMAIL_PORT = 25  # SMTP端口
-EMAIL_HOST_USER = 'fornjupt@163.com'  # 我自己的邮箱
-EMAIL_HOST_PASSWORD = '********'  # 我的邮箱密码
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.163.com')  # SMTP地址
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '25'))  # SMTP端口
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')  # 发件邮箱
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')  # 邮箱密码或授权码
 EMAIL_SUBJECT_PREFIX = '程序设计类课程作业平台'  # 为邮件Subject-line前缀,默认是'[django]'
 EMAIL_USE_TLS = True  # 与SMTP服务器通信时，是否启动TLS链接(安全链接)。默认是false
 
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 # Static files (css, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
@@ -173,7 +184,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static"), ]
 
 # 需要与site.cnf 设置的静态文件路径相同
-STATIC_ROOT = '/var/www/html/static'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(USER_FILE_DIR,'media')
 LOGIN_URL = '/accounts/login/'
@@ -188,6 +199,8 @@ CHANNEL_LAYERS = {
         "ROUTING": "code_week.routing.code_week_routing",
     },
 }
+if LOCAL_DEV:
+    CHANNEL_LAYERS = {}
 
 LOGGING = {
     'version': 1,
@@ -227,7 +240,7 @@ LOGGING = {
         'file':{
             'level':'INFO',
             'class':'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join('/home/judge/log/','django.log'),
+            'filename': os.path.join(LOG_DIR,'django.log'),
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 100, # 保留日志的数量，0代表不自动删除
             'formatter':'verbose',
@@ -236,7 +249,7 @@ LOGGING = {
         'detail':{
             'level':'INFO',
             'class':'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join('/home/judge/log/','detail.log'),
+            'filename': os.path.join(LOG_DIR,'detail.log'),
             'when': 'MIDNIGHT',
             'interval': 1,
             'backupCount': 180,
@@ -246,7 +259,7 @@ LOGGING = {
         'request':{
             'level':'INFO',
             'class':'logging.FileHandler',
-            'filename': os.path.join('/home/judge/log/','request.log'),
+            'filename': os.path.join(LOG_DIR,'request.log'),
             'formatter':'verbose',
             'encoding':'UTF-8',
         },

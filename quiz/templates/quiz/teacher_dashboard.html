@@ -18,6 +18,7 @@
         <div class="panel panel-default">
             <div class="panel-heading">
                 <strong>{{ bj.name }}</strong>
+                <span class="label label-info" style="margin-left:8px;">班级码 {{ bj.code }}</span>
                 <a href="{% url 'quiz_teacher_class' bj.id %}" class="btn btn-primary btn-xs pull-right">
                     查看详情 <i class="fa fa-arrow-right"></i>
                 </a>

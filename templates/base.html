@@ -61,12 +61,14 @@
                             </li>
                         </ul>
                     </li>
+                    {% if not user.is_content_admin %}
                     <li class="dropdown">
                         <a  class="dropdown-toggle" href="{% url 'to_message' %}" title="">
                             <i class="fa fa-inbox" aria-hidden="true" ></i>
                             信息&nbsp;{% if request.session.mnum > 0 %}({{request.session.mnum}}){% endif %}
                         </a>
                     </li>
+                    {% endif %}
                 {% else %}
                     <li><a href="{% url 'register' %}">注册</a></li>
                     <li><a href="{% url 'login' %}">登录</a></li>
@@ -95,6 +97,80 @@
 
 
                 {% if user.is_authenticated %}
+                    {% if user.is_content_admin %}
+                        <li class="sub-menu">
+                            <a href="javascript:;" id="manage">
+                                <i class="fa fa-cogs"></i><span>课程与知识点</span>
+                            </a>
+                            <ul class="sub" id="extend_manage">
+                                <li id="courser_manage"><a href="{% url 'list_coursers' %}">课程与知识点管理</a></li>
+                            </ul>
+                        </li>
+                        <li class="sub-menu">
+                            <a href="javascript:;" id="problem_list">
+                                <i class="fa fa-folder-open" aria-hidden="true"></i><span>题库管理</span>
+                            </a>
+                            <ul class="sub" id="extend_problem_list">
+                                <li id="choice_list"><a href="{% url 'choice_problem_list' %}">选择题题库</a></li>
+                                <li id="ducheng_list"><a href="{% url 'ducheng_problem_list' %}">填空题题库</a></li>
+                                <li id="biancheng_list"><a href="{% url 'problem_list' %}">编程题题库</a></li>
+                                <li id="tiankong_list"><a href="{% url 'tiankong_problem_list' %}">程序填空题题库</a></li>
+                                <li id="gaicuo_list"><a href="{% url 'gaicuo_problem_list' %}">程序改错题题库</a></li>
+                            </ul>
+                        </li>
+                    {% elif user.isTeacher %}
+                        <li class="sub-menu">
+                            <a href="javascript:;" id="manage">
+                                <i class="fa fa-cogs"></i><span>班级管理</span>
+                            </a>
+                            <ul class="sub" id="extend_manage">
+                                <li id="banji_manage"><a href="{% url 'banji_list' %}">班级管理</a></li>
+                            </ul>
+                        </li>
+                        <li class="sub-menu">
+                            <a href="javascript:;" id="quiz_teacher_menu">
+                                <i class="fa fa-question-circle" aria-hidden="true"></i><span>学生学习情况</span>
+                            </a>
+                            <ul class="sub" id="extend_quiz_teacher_menu">
+                                <li id="quiz_teacher_dashboard"><a href="{% url 'quiz_teacher_dashboard' %}">答题统计</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="sub-menu">
+                            <a href="javascript:;" id="quiz_menu">
+                                <i class="fa fa-question-circle" aria-hidden="true"></i><span>知识点练习</span>
+                            </a>
+                            <ul class="sub" id="extend_quiz_menu">
+                                <li id="quiz_join_banji"><a href="{% url 'quiz_join_banji' %}">加入班级</a></li>
+                                <li id="quiz_kp_tree"><a href="{% url 'quiz_kp_tree' %}">选择知识点</a></li>
+                                <li id="quiz_points"><a href="{% url 'quiz_points' %}">我的积分</a></li>
+                                <li id="quiz_leaderboard"><a href="{% url 'quiz_leaderboard' %}">积分排行榜</a></li>
+                            </ul>
+                        </li>
+                    {% endif %}
+                    {% if False %}
+                    {% if user.is_content_admin %}
+                        <li class="sub-menu">
+                            <a href="javascript:;" id="manage">
+                                <i class="fa fa-cogs"></i><span>课程与知识点</span>
+                            </a>
+                            <ul class="sub" id="extend_manage">
+                                <li id="courser_manage"><a href="{% url 'list_coursers' %}">课程与知识点管理</a></li>
+                            </ul>
+                        </li>
+                        <li class="sub-menu">
+                            <a href="javascript:;" id="problem_list">
+                                <i class="fa fa-folder-open" aria-hidden="true"></i><span>题库管理</span>
+                            </a>
+                            <ul class="sub" id="extend_problem_list">
+                                <li id="choice_list"><a href="{% url 'choice_problem_list' %}">选择题题库</a></li>
+                                <li id="ducheng_list"><a href="{% url 'ducheng_problem_list' %}">填空题题库</a></li>
+                                <li id="biancheng_list"><a href="{% url 'problem_list' %}">编程题题库</a></li>
+                                <li id="tiankong_list"><a href="{% url 'tiankong_problem_list' %}">程序填空题题库</a></li>
+                                <li id="gaicuo_list"><a href="{% url 'gaicuo_problem_list' %}">程序改错题题库</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
                      {% if not user.isTeacher %}
                      <li><a href="{% url 'student_score' %}" id="finished">
                      <i class="fa fa-print" aria-hidden="true"></i><span>我的数据</span></a></li>
@@ -105,12 +181,15 @@
                              <i class="fa fa-question-circle" aria-hidden="true"></i><span>知识点练习</span>
                          </a>
                          <ul class="sub" id="extend_quiz_menu">
+                             <li id="quiz_join_banji"><a href="{% url 'quiz_join_banji' %}">Join class</a></li>
                              <li id="quiz_kp_tree"><a href="{% url 'quiz_kp_tree' %}">选择知识点</a></li>
                              <li id="quiz_points"><a href="{% url 'quiz_points' %}">我的积分</a></li>
                              <li id="quiz_leaderboard"><a href="{% url 'quiz_leaderboard' %}">积分排行榜</a></li>
                          </ul>
                      </li>
                      {% endif %}
+                     {% if not user.isTeacher %}
+                     {# legacy sign menu hidden #}
                      <li class="mt" style="margin-top: 0" id="sign_user_manage">
                        {% if user.isTeacher %}
                          <a href="{% url 'sign.teacher.index' %}" id="sign_teacher_manage">
@@ -150,14 +229,25 @@
                         </li>
                         {% endif %}
                     {% endif %}
+                    {% endif %}
                     {% if 'work.add_homework' in perms %}
                         <li><a href="{% url 'list_finished_homework' %}" id="finished">
                             <i class="fa fa-print" aria-hidden="true"></i><span>作业结果分析</span></a></li>
                     {% endif %}
                     {% if user.isTeacher %}
+                    {% if 'work.add_banji' in perms %}
+                    <li class="sub-menu">
+                        <a href="javascript:;" id="manage">
+                            <i class="fa fa-cogs"></i><span>班级管理</span>
+                        </a>
+                        <ul class="sub" id="extend_manage">
+                            <li id="banji_manage"><a href="{% url 'banji_list' %}">班级管理</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
                     <li class="sub-menu">
                         <a href="javascript:;" id="quiz_teacher_menu">
-                            <i class="fa fa-question-circle" aria-hidden="true"></i><span>知识点练习</span>
+                            <i class="fa fa-question-circle" aria-hidden="true"></i><span>学生学习情况</span>
                         </a>
                         <ul class="sub" id="extend_quiz_teacher_menu">
                             <li id="quiz_teacher_dashboard"><a href="{% url 'quiz_teacher_dashboard' %}">答题统计</a></li>
@@ -202,7 +292,10 @@
                             </ul>
                         </li>
                     {% endif %}
+                    {% endif %}
+                    {% endif %}
                 {% endif %}
+                {% if not user.is_content_admin %}
                 <li class="sub-menu">
                     <a href="javascript:;">
                         <i class="fa fa-user" aria-hidden="true"></i><span>账户</span>
@@ -221,7 +314,8 @@
                         {% endif %}
                     </ul>
                 </li>
-                {% if user.is_superuser %}
+                {% endif %}
+                {% if user.is_superuser and not user.is_content_admin %}
                 <li class="sub-menu">
                     <a href="javascript:;">
                         <i class="fa fa-puzzle-piece" aria-hidden="true"></i><span>系统管理</span>
@@ -232,7 +326,7 @@
                     </ul>
                 </li>
                 {% endif %}
-		{% if user.is_authenticated %}
+		{% if user.is_authenticated and not user.is_content_admin %}
                 <script>
                     jQuery(document).ready(function () {
                 
@@ -382,6 +476,11 @@
             case 'finished':
                 $("#finished").addClass("active");
                 break;
+            case 'quiz_join_banji':
+                $("#quiz_join_banji").addClass("active");
+                $("#quiz_menu").addClass("active");
+                $("#extend_quiz_menu").css("display", "block");
+                break;
             case 'quiz_kp_tree':
                 $("#quiz_kp_tree").addClass("active");
                 $("#quiz_menu").addClass("active");
@@ -407,6 +506,7 @@
                 $("#quiz_teacher_menu").addClass("active");
                 $("#extend_quiz_teacher_menu").css("display", "block");
                 break;
+            case 'courser_manage':
                 $("#courser_manage").addClass('active');
                 $("#manage").addClass("active");
                 $("#extend_manage").css('display', 'block');

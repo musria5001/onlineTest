@@ -3,6 +3,10 @@ __pycache__/
 *.pyc
 *.pyo
 *.log
+*.log.*
+db.sqlite3
+db.sqlite3-journal
+local_settings.py
 *.xls
 *.xlsx
 log.txt

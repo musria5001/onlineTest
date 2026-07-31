@@ -70,17 +70,30 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):  # __unicode__ on Python 2
         return self.username
 
+    def isContentAdmin(self):
+        if self.groups.filter(name__in=['管理员', 'admin', 'administrator']).exists():
+            return True
+        return self.is_admin and not self.groups.filter(name__in=['老师', '教师', 'teacher']).exists()
+
     def isTeacher(self):
-        return self.groups.all()[0].pk==1
+        if self.groups.filter(name__in=['老师', '教师', 'teacher']).exists():
+            return True
+        if self.isContentAdmin():
+            return False
+        if self.is_superuser:
+            return True
+        return self.has_perm('work.add_banji') or self.has_perm('work.change_banji') or self.has_perm('work.add_homework')
+
+    @property
+    def is_content_admin(self):
+        return self.isContentAdmin()
 
     @property
     def is_teacher(self):
         "Is the user a member of staff?"
-        # Simplest possible answer: All admins are staff
-        return self.groups.all()[0].pk==1
+        return self.isTeacher()
 
     @property
     def is_staff(self):
         "Is the user a member of staff?"
-        # Simplest possible answer: All admins are staff
-        return self.groups.all()[0].pk==1
+        return self.isTeacher()

@@ -34,7 +34,14 @@ $(document).ready(function(){
                 <h1 name='tips' id='tips'></h1>
                 <p class="lead">南京邮电大学{{ SITE_NAME }}欢迎您！</p>
 
-                <p><a class="btn btn-lg btn-success" href="{% url 'list_do_homework' %}">进入作业列表</a>
+                <p>
+                    {% if user.is_authenticated and user.is_content_admin %}
+                        <a class="btn btn-lg btn-success" href="{% url 'list_coursers' %}">进入课程与知识点管理</a>
+                    {% elif user.is_authenticated and user.isTeacher %}
+                        <a class="btn btn-lg btn-success" href="{% url 'quiz_teacher_dashboard' %}">查看班级学习情况</a>
+                    {% else %}
+                        <a class="btn btn-lg btn-success" href="{% url 'quiz_kp_tree' %}">进入知识点练习</a>
+                    {% endif %}
                     <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal">
                         查看使用教程
                     </button>

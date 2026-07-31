@@ -5,7 +5,6 @@
     .record-wrong { border-left: 4px solid #d9534f; }
     .option-btn-sm { display: inline-block; padding: 4px 12px; margin: 2px; border-radius: 3px; border: 1px solid #ddd; font-size: 13px; }
     .option-btn-sm.correct { background: #dff0d8; border-color: #5cb85c; }
-    .option-btn-sm.wrong { background: #f2dede; border-color: #d9534f; }
     .option-btn-sm.neutral { background: #f5f5f5; }
     .summary-box { text-align: center; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
     .summary-box.total { background: #f5f5f5; }
@@ -16,9 +15,7 @@
     <i class="fa fa-arrow-left"></i> 返回班级
 </a>
 
-<h4 class="mt-3">
-    {{ stu.username }} ({{ stu.id_num }}) 的答题记录
-</h4>
+<h4 class="mt-3">{{ stu.username }}（{{ stu.id_num }}）的答题记录</h4>
 
 <div class="row">
     <div class="col-md-4">
@@ -41,7 +38,6 @@
     </div>
 </div>
 
-<!-- 按知识点汇总 -->
 {% if kp2_summary %}
 <div class="panel panel-default">
     <div class="panel-heading"><strong>各知识点正确率</strong></div>
@@ -66,17 +62,16 @@
 </div>
 {% endif %}
 
-<!-- 详细答题记录 -->
 {% if records %}
 <div class="panel panel-default">
-    <div class="panel-heading"><strong>最近200条答题记录</strong></div>
+    <div class="panel-heading"><strong>最近 100 条答题记录</strong></div>
     <div class="panel-body" style="padding: 0;">
         {% for record in records %}
         <div class="{% if record.is_correct %}record-correct{% else %}record-wrong{% endif %}"
              style="padding: 12px 15px; border-bottom: 1px solid #eee;">
             <div>
                 <strong>{% if record.question_type == 'choice' %}{{ record.choice_question.title }}{% else %}{{ record.ducheng_question.title }}{% endif %}</strong>
-                <small class="text-muted"> — {{ record.kp2.name }}</small>
+                <small class="text-muted"> - {{ record.kp2.name }}</small>
                 <span class="pull-right">
                     {% if record.is_correct %}
                         <span class="label label-success">正确</span>
@@ -88,22 +83,46 @@
             </div>
             {% if record.question_type == 'choice' %}
             <div style="margin-top: 5px;">
-                <span class="option-btn-sm {% if record.choice_question.right_answer == 'a' %}correct{% else %}neutral{% endif %}">
-                    A. {{ record.choice_question.a }}
-                </span>
-                <span class="option-btn-sm {% if record.choice_question.right_answer == 'b' %}correct{% else %}neutral{% endif %}">
-                    B. {{ record.choice_question.b }}
-                </span>
-                <span class="option-btn-sm {% if record.choice_question.right_answer == 'c' %}correct{% else %}neutral{% endif %}">
-                    C. {{ record.choice_question.c }}
-                </span>
-                <span class="option-btn-sm {% if record.choice_question.right_answer == 'd' %}correct{% else %}neutral{% endif %}">
-                    D. {{ record.choice_question.d }}
-                </span>
+                <span class="option-btn-sm {% if record.choice_question.right_answer == 'a' %}correct{% else %}neutral{% endif %}">A. {{ record.choice_question.a }}</span>
+                <span class="option-btn-sm {% if record.choice_question.right_answer == 'b' %}correct{% else %}neutral{% endif %}">B. {{ record.choice_question.b }}</span>
+                <span class="option-btn-sm {% if record.choice_question.right_answer == 'c' %}correct{% else %}neutral{% endif %}">C. {{ record.choice_question.c }}</span>
+                <span class="option-btn-sm {% if record.choice_question.right_answer == 'd' %}correct{% else %}neutral{% endif %}">D. {{ record.choice_question.d }}</span>
             </div>
             {% else %}
             <div style="margin-top:5px;">
-                <small class="text-muted">填空题，答案: {{ record.ducheng_question.answer }}</small>
+                <small class="text-muted">填空题答案：{{ record.ducheng_question.answer }}</small>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if wrong_records %}
+<div class="panel panel-danger">
+    <div class="panel-heading"><strong>错题记录</strong></div>
+    <div class="panel-body" style="padding: 0;">
+        {% for record in wrong_records %}
+        <div class="record-wrong" style="padding: 12px 15px; border-bottom: 1px solid #eee;">
+            <div>
+                <strong>{% if record.question_type == 'choice' %}{{ record.choice_question.title }}{% else %}{{ record.ducheng_question.title }}{% endif %}</strong>
+                <small class="text-muted"> - {{ record.kp2.name }}</small>
+                <span class="pull-right">
+                    <span class="label label-danger">错误</span>
+                    <small class="text-muted">{{ record.created_time|date:"Y-m-d H:i" }}</small>
+                </span>
+            </div>
+            {% if record.question_type == 'choice' %}
+            <div style="margin-top: 5px;">
+                <span class="option-btn-sm {% if record.choice_question.right_answer == 'a' %}correct{% else %}neutral{% endif %}">A. {{ record.choice_question.a }}</span>
+                <span class="option-btn-sm {% if record.choice_question.right_answer == 'b' %}correct{% else %}neutral{% endif %}">B. {{ record.choice_question.b }}</span>
+                <span class="option-btn-sm {% if record.choice_question.right_answer == 'c' %}correct{% else %}neutral{% endif %}">C. {{ record.choice_question.c }}</span>
+                <span class="option-btn-sm {% if record.choice_question.right_answer == 'd' %}correct{% else %}neutral{% endif %}">D. {{ record.choice_question.d }}</span>
+            </div>
+            {% else %}
+            <div style="margin-top:5px;">
+                <small class="text-muted">参考答案：{{ record.ducheng_question.answer }}</small>
             </div>
             {% endif %}
         </div>

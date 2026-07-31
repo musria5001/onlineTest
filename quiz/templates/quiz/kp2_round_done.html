@@ -6,12 +6,10 @@
 </style>
 <div class="done-box">
     <i class="fa fa-check-circle-o"></i>
-    <h3>第 {{ round }} 轮完成！</h3>
-    <a href="{% url 'quiz_answer' kp2.id %}?next=1" class="btn btn-primary btn-lg" style="margin-right:10px;">
-        继续答题
-    </a>
-    <a href="{% url 'quiz_kp_tree' %}" class="btn btn-default btn-lg">
-        返回知识点列表
-    </a>
+    <h3>第 {{ round }} 轮已完成</h3>
+    {% if next_url %}
+    <a href="{% url next_url kp2.id %}?done={{ round }}" class="btn btn-primary btn-lg" style="margin-right:10px;">继续答题</a>
+    {% endif %}
+    <a href="{% url 'quiz_kp_tree' %}" class="btn btn-default btn-lg">返回知识点列表</a>
 </div>
 {% endblock %}

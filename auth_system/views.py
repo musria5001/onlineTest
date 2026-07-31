@@ -63,6 +63,38 @@ class UserControl(View):
         error_code = 0
         email = request.POST.get("email", "")
         password = request.POST.get("password", "")
+        if re.match("^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$", email) is not None:
+            user = auth.authenticate(username=email, password=password)
+        elif email:
+            try:
+                user = MyUser._default_manager.get(id_num=email)
+                user = auth.authenticate(username=user.email, password=password)
+            except:
+                user = None
+        else:
+            user = None
+
+        if user is not None:
+            if not user.is_active:
+                errors.append("账号已被禁用")
+                error_code = 1
+            elif password == user.id_num + "@Njupt":
+                errors.append("你的密码仍是初始密码，请及时修改。")
+                error_code = 2
+                auth.login(request, user)
+            else:
+                auth.login(request, user)
+        else:
+            errors.append("账号或密码不正确")
+            error_code = 1
+
+        mydict = {"errors": errors, "code": error_code}
+        return HttpResponse(json.dumps(mydict), content_type="application/json")
+
+        errors = []
+        error_code = 0
+        email = request.POST.get("email", "")
+        password = request.POST.get("password", "")
         next = request.POST.get("next", "")
         if re.match("^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$", email) is not None:
             user = auth.authenticate(username=email, password=password)
