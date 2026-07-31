@@ -42,6 +42,8 @@
 
 <script>
 var answered = false;
+var retrying = false;
+var fadeTimer = null;
 
 $('#answer-input').keypress(function(e) { if (e.which === 13) submitDucheng(); });
 
@@ -58,6 +60,7 @@ function submitDucheng() {
             question_type: 'ducheng',
             question_id: {{ question.ducheng_id }},
             selected: val,
+            retry: retrying ? '1' : '0',
         },
         dataType: 'json',
         success: function(res) {
@@ -65,10 +68,12 @@ function submitDucheng() {
                 var rb = $('#result-box');
                 rb.removeClass('correct').addClass('wrong').html('<h4><i class="fa fa-lightbulb-o"></i> ' + (res.msg || '再思考一下吧') + '</h4>').show();
                 answered = false;
+                retrying = true;
                 $('#answer-input').focus();
-                setTimeout(function() { rb.fadeOut(); }, 1500);
+                fadeTimer = setTimeout(function() { rb.fadeOut(); }, 1500);
                 return;
             }
+            clearTimeout(fadeTimer);
             var rb = $('#result-box');
             if (res.correct) {
                 rb.addClass('correct').html('<h4><i class="fa fa-check-circle"></i> 回答正确！+1分</h4>');

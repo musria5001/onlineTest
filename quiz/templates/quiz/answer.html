@@ -45,6 +45,8 @@
 
 <script>
 var answered = false;
+var retrying = false;
+var fadeTimer = null;
 
 function selectAnswer(val) {
     if (answered) return;
@@ -59,6 +61,7 @@ function selectAnswer(val) {
             question_id: {{ question.id }},
             question_type: 'choice',
             selected: val,
+            retry: retrying ? '1' : '0',
         },
         dataType: 'json',
         success: function(res) {
@@ -66,10 +69,12 @@ function selectAnswer(val) {
                 var rb = $('#result-box');
                 rb.removeClass('correct').addClass('wrong').html('<h4><i class="fa fa-lightbulb-o"></i> ' + (res.msg || '再思考一下吧') + '</h4>').show();
                 answered = false;
+                retrying = true;
                 $('.option-btn').prop('disabled', false).removeClass('selected');
-                setTimeout(function() { rb.fadeOut(); }, 1500);
+                fadeTimer = setTimeout(function() { rb.fadeOut(); }, 1500);
                 return;
             }
+            clearTimeout(fadeTimer);
             $('.option-btn[data-value="' + res.right_answer + '"]').addClass('correct-answer');
             var rb = $('#result-box');
             if (res.correct) {

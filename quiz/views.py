@@ -15,6 +15,11 @@ def kp_tree(request):
     if request.user.isTeacher():
         raise Http404()
 
+    # 检查是否已加入班级
+    if not BanJi.objects.filter(students=request.user).exists():
+        from django.shortcuts import redirect
+        return redirect('quiz_join_banji')
+
     courses = ClassName.objects.all().prefetch_related('knowledgepoint1_set__knowledgepoint2_set')
     answered_choice_ids = set(
         AnswerRecord.objects.filter(user=request.user, question_type='choice').values_list('choice_question_id', flat=True)
