@@ -54,6 +54,7 @@ class ChoiceProblem(models.Model):
     c = models.CharField(max_length=200)
     d = models.CharField(max_length=200)
     right_answer = models.CharField(max_length=1)
+    explanation = models.TextField(max_length=500, verbose_name='题目解析', blank=True, null=True)
     creater = models.ForeignKey(MyUser)
     update_date = models.DateTimeField(auto_now=True, verbose_name='最后修改时间', blank=True, null=True)
     in_date = models.DateTimeField(auto_now_add=True)
@@ -73,8 +74,8 @@ class ChoiceProblem(models.Model):
 class DuchengProblem(models.Model):
     ducheng_id = models.AutoField('读程题id', primary_key=True)
     title = models.TextField( max_length=200)
-    #description = models.TextField('问题描述', blank=True, null=True)
     answer = models.TextField('正确结果', blank=True, null=True)
+    explanation = models.TextField(max_length=500, verbose_name='题目解析', blank=True, null=True)
     in_date = models.DateTimeField('录入时间', blank=True, null=True, auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True, verbose_name='最后修改时间', blank=True, null=True)
     knowledgePoint1 = models.ManyToManyField(KnowledgePoint1, verbose_name='一级知识点')

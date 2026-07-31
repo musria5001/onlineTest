@@ -61,20 +61,25 @@ function submitDucheng() {
         },
         dataType: 'json',
         success: function(res) {
+            if (res.retry) {
+                var rb = $('#result-box');
+                rb.removeClass('correct').addClass('wrong').html('<h4><i class="fa fa-lightbulb-o"></i> ' + (res.msg || '再思考一下吧') + '</h4>').show();
+                answered = false;
+                $('#answer-input').focus();
+                setTimeout(function() { rb.fadeOut(); }, 1500);
+                return;
+            }
             var rb = $('#result-box');
             if (res.correct) {
                 rb.addClass('correct').html('<h4><i class="fa fa-check-circle"></i> 回答正确！+1分</h4>');
             } else {
                 rb.addClass('wrong').html('<h4><i class="fa fa-times-circle"></i> 回答错误</h4><p>你的答案: <b>'+val+'</b></p><p>正确答案: <b>'+res.right_answer+'</b></p>');
             }
+            if (res.explanation) {
+                rb.append('<div style=\"margin-top:10px;padding-top:10px;border-top:1px dashed #ccc;font-size:14px;color:#555;\"><strong><i class=\"fa fa-lightbulb-o\"></i> 解析：</strong>' + res.explanation + '</div>');
+            }
             rb.show();
-            var nextUrl = '?';
-            if (res.done) nextUrl += 'done=' + res.done;
-            $('#next-btn a').attr('href', nextUrl);
             $('#next-btn').show();
-            setTimeout(function() {
-                window.location.href = nextUrl;
-            }, 1200);
         },
         error: function() { answered = false; alert('提交失败'); }
     });

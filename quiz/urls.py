@@ -1,10 +1,11 @@
 from django.conf.urls import url
 
-from . import secure_views as views
+from . import views
+from . import secure_views
 
 urlpatterns = [
     url(r'^$', views.kp_tree, name='quiz_kp_tree'),
-    url(r'^join/$', views.join_banji, name='quiz_join_banji'),
+    url(r'^join/$', secure_views.join_banji, name='quiz_join_banji'),
     url(r'^kp2/(?P<kp2_id>\d+)/$', views.answer_question, name='quiz_answer'),
     url(r'^kp2/(?P<kp2_id>\d+)/submit/$', views.submit_answer, name='quiz_submit'),
     url(r'^points/$', views.my_points, name='quiz_points'),

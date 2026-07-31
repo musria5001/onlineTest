@@ -258,6 +258,7 @@ def submit_answer(request, kp2_id):
         return JsonResponse({
             'correct': is_correct, 'qtype': 'choice',
             'right_answer': question.right_answer, 'selected': selected,
+            'explanation': question.explanation or '',
             'done': done_rnd,
         })
 
@@ -316,6 +317,7 @@ def submit_answer(request, kp2_id):
         return JsonResponse({
             'correct': is_correct, 'qtype': 'ducheng',
             'right_answer': question.answer, 'selected': student_answer,
+            'explanation': question.explanation or '',
             'done': done_rnd,
         })
 

@@ -110,7 +110,7 @@ WSGI_APPLICATION = 'onlineTest.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
-USE_SQLITE = os.environ.get("ONLINETEST_USE_SQLITE", "1") != "0"
+USE_SQLITE = os.environ.get("ONLINETEST_USE_SQLITE", "0") != "0"
 LOCAL_DEV = os.environ.get("ONLINETEST_LOCAL_DEV", "1") != "0"
 if USE_SQLITE:
     DATABASES = {
@@ -125,7 +125,7 @@ else:
             'ENGINE': 'django.db.backends.mysql',
             'NAME': os.environ.get('MYSQL_DATABASE', 'jol'),
             'USER': os.environ.get('MYSQL_USER', 'root'),
-            'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
+            'PASSWORD': os.environ.get('MYSQL_PASSWORD', 'yfysgdsb2b'),
             'HOST': os.environ.get('MYSQL_HOST', ''),
             'PORT': os.environ.get('MYSQL_PORT', ''),
         }
